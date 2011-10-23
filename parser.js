@@ -24,7 +24,7 @@ var WebVTTParser = function() {
         lines[linePos][6] != " " &&
         lines[linePos][6] != "\t"
     ) {
-      err("No valid signature.")
+      err("No valid signature. (File needs to start with \"WEBVTT\".)")
     }
 
     linePos++
@@ -184,7 +184,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
     // 13
     if(line[pos] != ".") {
-      err("No decimal separator found.")
+      err("No decimal separator (\".\") found.")
       return
     }
     pos++
@@ -400,6 +400,15 @@ var WebVTTCueTextParser = function(line, errorHandler) {
       current.children.push({type:"object", name:token[1], children:[], parent:current})
       current = current.children[current.children.length-1]
     }
+    function inScope(name) {
+      var node = current
+      while(node) {
+        if(node.name == "v")
+          return true
+        node = node.parent
+      }
+      return
+    }
 
     while(line[pos] != undefined) {
       var token = nextToken()
@@ -418,6 +427,8 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         } else if(name == "rt" && current.name == "ruby") {
           attach(token)
         } else if(name == "v") {
+          if(inScope("v"))
+            err("<v> cannot be nested inside itself.")
           attach(token)
           token.value = token[3] // annotation
         } else {
