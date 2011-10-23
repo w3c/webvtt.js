@@ -46,6 +46,8 @@ var WebVTTParser = function() {
         continue
 
       cue = {
+        start:0,
+        end:0,
         identifier:"",
         pauseOnExit:false,
         direction:"horizontal",
@@ -54,7 +56,8 @@ var WebVTTParser = function() {
         textPosition:50,
         size:100,
         alignment:"middle",
-        text:""
+        text:"",
+        tree:null
       }
 
       if(lines[linePos].indexOf("-->") == -1) {
@@ -78,19 +81,19 @@ var WebVTTParser = function() {
         while(lines[linePos] != "" && lines[linePos] != undefined) {
           linePos++
         }
+        continue
       }
 
       /* CUE TEXT LOOP */
-      var cuetext = ""
       while(lines[linePos] != "" && lines[linePos] != undefined) {
-        if(cuetext != "")
-          cuetext += "\n"
-        cuetext += lines[linePos]
+        if(cue.text != "")
+          cue.text += "\n"
+        cue.text += lines[linePos]
         linePos++
       }
-      var cuetextparser = new WebVTTCueTextParser(cuetext, err)
-      cuetextparser.parse()
-      // XXX add the cue
+      var cuetextparser = new WebVTTCueTextParser(cue.text, err)
+      cue.tree = cuetextparser.parse()
+      cues.push(cue)
 
       linePos++
     }
