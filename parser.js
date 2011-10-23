@@ -24,13 +24,15 @@ var WebVTTParser = function() {
         lines[linePos][6] != " " &&
         lines[linePos][6] != "\t"
     ) {
-      err("WebVTT files must start with a valid signature.")
+      err("No valid signature.")
     }
 
     linePos++
 
     /* HEADER */
     while(lines[linePos] != "" && lines[linePos] != undefined) {
+      // XXX not called out in the specification
+      err("No blank line after the signature. Line ignored.")
       linePos++
     }
 
@@ -287,6 +289,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
           err("'A' setting value must be 'start', 'middle', or 'end'.")
         }
       } else {
+        err("Invalid setting.")
         skip(NOSPACE)
       }
     }
@@ -358,8 +361,8 @@ var WebVTTCueTextParser = function(line, errorHandler) {
 
     while(line[pos] != undefined) {
       var token = nextToken()
-      if(token[0] == "string") {
-        current.children.push({type:"string", value:token[1], parent:current})
+      if(token[0] == "text") {
+        current.children.push({type:"text", value:token[1], parent:current})
       } else if(token[0] == "start tag") {
         var name = token[1]
         if(
@@ -389,8 +392,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
       } else if(token[0] == "timestamp") {
         var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err)
         if(timings.parseTimestamp())
-          continue
-          // XXX append
+          current.children.push({type:"timestamp", value:token[1], parent:current})
       }
     }
     return result
@@ -410,7 +412,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         } else if(c == "<" && result == "") {
           state = "tag"
         } else if(c == "<" || c == undefined) {
-          return ["string", result]
+          return ["text", result]
         } else {
           result += c
         }
@@ -432,7 +434,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         } else if(c == undefined) {
           err("Incorrect escape.")
           result += buffer
-          return ["string", result]
+          return ["text", result]
         } else {
           // XXX spec does not append c
           err("Incorrect escape.")
@@ -525,7 +527,7 @@ function serializeChildren(children) {
   var result = ""
   for (var i = 0; i < children.length; i++) {
     var child = children[i]
-    if(child.type == "string") {
+    if(child.type == "text") {
       result += child.value
     } else if(child.type == "object") {
       result += "<" + child.name + ">"
