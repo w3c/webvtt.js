@@ -340,37 +340,32 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
 
   this.parse = function(cue) {
     skip(SPACE)
-    // XXX set timestamp on cue
     cue.start = timestamp()
     if(cue.start == undefined) {
       return
     }
     skip(SPACE)
-    // 6
+    // 6-8
     if(line[pos] != "-") {
       err("No valid timestamp separator found.")
       return
     }
     pos++
-    // 7
     if(line[pos] != "-") {
       err("No valid timestamp separator found.")
       return
     }
     pos++
-    // 8
     if(line[pos] != ">") {
       err("No valid timestamp separator found.")
       return
     }
     pos++
-    // 9
     skip(SPACE)
-    // 10 XXX set timestamp on cue
     cue.end = timestamp()
-    if(cue.end == undefined)
+    if(cue.end == undefined) {
       return
-    // 11
+    }
     skip(SPACE)
     settings(cue)
     if(parseError)
@@ -391,7 +386,6 @@ var WebVTTCueTextParser = function(line, errorHandler) {
   var line = line,
       pos = 0,
       err = function(message) {
-        parseError = true
         errorHandler(message, pos+1)
       }
 
