@@ -150,7 +150,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
     // 5-7
     val1 = collect(/\d/)
-    if(val1.length > 2 || parseInt(val1) > 59) {
+    if(val1.length > 2 || parseInt(val1, 10) > 59) {
       units = "hours"
     }
     // 8
@@ -195,15 +195,15 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       return
     }
     // 17
-    if(parseInt(val2) > 59) {
+    if(parseInt(val2, 10) > 59) {
       err("You cannot have more than 59 minutes.")
       return
     }
-    if(parseInt(val3) > 59) {
+    if(parseInt(val3, 10) > 59) {
       err("You cannot have more than 59 seconds.")
       return
     }
-    return parseInt(val1) * 60 * 60 + parseInt(val2) * 60 + parseInt(val3) + parseInt(val4) / 1000
+    return parseInt(val1, 10) * 60 * 60 + parseInt(val2, 10) * 60 + parseInt(val3, 10) + parseInt(val4, 10) / 1000
   }
 
   /*
@@ -282,13 +282,13 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
         }
         // 8
         if(value[value.length-1] == "%") {
-          if(parseInt(value) > 100) {
+          if(parseInt(value, 10) > 100) {
             err("Line position cannot be >100%.")
             continue
           }
           cue.snapToLines = false
         }
-        cue.linePosition = parseInt(value)
+        cue.linePosition = parseInt(value, 10)
       } else if(setting == "T") { // text position
         value = collect(/\d/)
         // 3
@@ -303,11 +303,11 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
           continue
         }
         // 7-8
-        if(parseInt(value) > 100) {
+        if(parseInt(value, 10) > 100) {
           err("Size cannot be >100%.")
           continue
         }
-        cue.textPosition = parseInt(value)
+        cue.textPosition = parseInt(value, 10)
       } else if(setting == "S") { // size
         value = collect(/\d/)
         // 3
@@ -322,11 +322,11 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
           continue
         }
         // 7-8
-        if(parseInt(value) > 100) {
+        if(parseInt(value, 10) > 100) {
           err("Size cannot be >100%.")
           continue
         }
-        cue.size = parseInt(value)
+        cue.size = parseInt(value, 10)
       } else if(setting == "A") { // alignment
         value = collect(NOSPACE)
         if(value != "start" && value != "middle" && value != "end") {
