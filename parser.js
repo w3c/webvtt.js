@@ -12,7 +12,7 @@ var WebVTTParser = function() {
   }
   this.parse = function(input) {
     //XXX need global search and replace for \0
-    var startTime = (new Date).getTime(),
+    var startTime = Date.now(),
         lines = input.split(NEWLINE),
         cues = []
 
@@ -98,7 +98,7 @@ var WebVTTParser = function() {
       linePos++
     }
     /* END */
-    return {cues:cues, errors:errors, time:(new Date).getTime()-startTime}
+    return {cues:cues, errors:errors, time:Date.now()-startTime}
   }
 }
 
@@ -403,7 +403,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
     function inScope(name) {
       var node = current
       while(node) {
-        if(node.name == "v")
+        if(node.name == name)
           return true
         node = node.parent
       }
