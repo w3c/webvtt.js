@@ -1,20 +1,17 @@
 // Not intended to be fast.
 
-var NEWLINE = /\r\n|\r|\n/,
-    SPACE = /[\u0020\t\f]/,
-    NOSPACE = /[^\u0020\t\f]/
-
 var WebVTTParser = function() {
-  var linePos = 0,
-      errors = []
-  function err(message, col) {
-    errors.push({message:message, line:linePos+1, col:col})
-  }
   this.parse = function(input) {
     //XXX need global search and replace for \0
-    var startTime = Date.now(),
+    var NEWLINE = /\r\n|\r|\n/,
+        startTime = Date.now(),
+        linePos = 0,
         lines = input.split(NEWLINE),
-        cues = []
+        cues = [],
+        errors = []
+    function err(message, col) {
+      errors.push({message:message, line:linePos+1, col:col})
+    }
 
     /* SIGNATURE */
     if(
@@ -83,6 +80,7 @@ var WebVTTParser = function() {
         }
         continue
       }
+      linePos++
 
       /* CUE TEXT LOOP */
       while(lines[linePos] != "" && lines[linePos] != undefined) {
@@ -103,7 +101,9 @@ var WebVTTParser = function() {
 }
 
 var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
-  var line = line,
+  var SPACE = /[\u0020\t\f]/,
+      NOSPACE = /[^\u0020\t\f]/,
+      line = line,
       pos = 0,
       parseError = false,
       err = function(message) {
@@ -180,7 +180,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     } else {
       val3 = val2
       val2 = val1
-      val1 = ""
+      val1 = "0"
     }
     // 13
     if(line[pos] != ".") {
@@ -376,12 +376,12 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     return true
   }
   this.parseTimestamp = function() {
-    var timestamp = timestamp()
+    var ts = timestamp()
     if(line[pos] != undefined) {
       err("Timestamp must not have trailing characters.")
       return
     }
-    return timestamp
+    return ts
   }
 }
 
@@ -446,7 +446,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err),
             timestamp = timings.parseTimestamp()
         if(timestamp != undefined) {
-          current.children.push({type:"timestamp", value:token[1], parent:current})
+          current.children.push({type:"timestamp", value:timestamp, parent:current})
         }
       }
     }
@@ -576,27 +576,32 @@ var WebVTTCueTextParser = function(line, errorHandler) {
   }
 }
 
-/*
-function serializeChildren(children) {
-  // lousy serialize function
-  var result = ""
-  for (var i = 0; i < children.length; i++) {
-    var child = children[i]
-    if(child.type == "text") {
-      result += child.value
-    } else if(child.type == "object") {
-      result += "<" + child.name + ">"
-      if(child.children)
-        result += serializeChildren(child.children)
-      result += "</" + child.name + ">"
-    } else {
-      result += "XXX"
+var WebVTTSerializer = function() {
+  function serializeTree(tree) {
+    var result = ""
+    for (var i = 0; i < tree.length; i++) {
+      var node = tree[i]
+      if(node.type == "text") {
+        result += node.value
+      } else if(node.type == "object") {
+        result += "<" + node.name + ">"
+        if(node.children)
+          result += serializeTree(node.children)
+        result += "</" + node.name + ">"
+      } else {
+        result += "<" + node.value + ">"
+      }
     }
+    return result
   }
-  return result
+  function serializeCue(cue) {
+    return cue.start + " " + cue.end + "\n" + serializeTree(cue.tree.children) + "\n\n"
+  }
+  this.serialize = function(cues) {
+    var result = ""
+    for(var i=0;i<cues.length;i++) {
+      result += serializeCue(cues[i])
+    }
+    return result
+  }
 }
-
-var tralla = new WebVTTCueTextParser("&amp;<i>c")
-    trollo = tralla.parse().children
-alert(serializeChildren(trollo))
-*/
