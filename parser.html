@@ -26,18 +26,26 @@
 <v Roger Bingham>Astrophysicist, Director of the Hayden Planetarium
 
 </textarea>
+<p>You need JavaScript for this service.
 <ol></ol>
 <script>
   function test() {
     //var start = (new Date).getTime();
-    var p = new WebVTTParser()
-    p.parse(document.getElementsByTagName("textarea")[0].value)
+    var pa = new WebVTTParser(),
+        r = pa.parse(document.getElementsByTagName("textarea")[0].value)
     //var diff = (new Date).getTime() - start;
-    var ol = document.getElementsByTagName("ol")[0]
+    var ol = document.getElementsByTagName("ol")[0],
+        p = document.getElementsByTagName("p")[0]
     ol.textContent = ""
-    if(p.errors.length > 0) {
-      for(var i = 0; i < p.errors.length; i++) {
-        var error = p.errors[i],
+    if(r.errors.length > 0) {
+      if(r.errors.length == 1)
+        p.textContent = "Almost there!"
+      else if(r.errors.length < 5)
+        p.textContent = "Just fix these mistakes my man."
+      else
+        p.textContent = "You are hopeless, RTFS."
+      for(var i = 0; i < r.errors.length; i++) {
+        var error = r.errors[i],
             message = "Line " + error.line,
             li = document.createElement("li")
         if(error.col)
@@ -45,6 +53,10 @@
         li.textContent = message + ": " + error.message
         ol.appendChild(li)
       }
+    } else {
+      p.textContent = "This is boring, your WebVTT is valid!"
     }
+    p.textContent += " (" + r.time + "ms)"
   }
+  test()
 </script>

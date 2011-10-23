@@ -7,13 +7,13 @@ var NEWLINE = /\r\n|\r|\n/,
 var WebVTTParser = function() {
   var linePos = 0,
       errors = []
-  this.errors = errors
   function err(message, col) {
     errors.push({message:message, line:linePos+1, col:col})
   }
   this.parse = function(input) {
     //XXX need global search and replace for \0
-    var lines = input.split(NEWLINE),
+    var startTime = (new Date).getTime(),
+        lines = input.split(NEWLINE),
         cues = []
 
     /* SIGNATURE */
@@ -97,8 +97,8 @@ var WebVTTParser = function() {
 
       linePos++
     }
-
     /* END */
+    return {cues:cues, errors:errors, time:(new Date).getTime()-startTime}
   }
 }
 
