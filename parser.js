@@ -13,8 +13,8 @@ var WebVTTParser = function() {
   }
   this.parse = function(input) {
     //XXX need global search and replace for \0
-    //input = input.replace("\0", "\ufffd")
-    var lines = input.split(NEWLINE)
+    var lines = input.split(NEWLINE),
+        cues = []
 
     /* SIGNATURE */
     if(
@@ -38,35 +38,45 @@ var WebVTTParser = function() {
 
     /* CUE LOOP */
     while(lines[linePos] != undefined) {
+      var cue
       while(lines[linePos] == "") {
         linePos++
       }
       if(lines[linePos] == undefined)
         continue
 
-      // XXX setup cue here if desired
+      cue = {
+        identifier:"",
+        pauseOnExit:false,
+        direction:"horizontal",
+        snapToLines:true,
+        linePosition:"auto",
+        textPosition:50,
+        size:100,
+        alignment:"middle",
+        text:""
+      }
 
       if(lines[linePos].indexOf("-->") == -1) {
-        // XXX set cue identifier
+        cue.identifier = lines[linePos]
 
         linePos++
 
-        if(lines[linePos] == "") {
+        if(lines[linePos] == "" || lines[linePos] == undefined) {
           err("Cue identifier cannot be standalone.")
           continue
         }
 
-      } else {
-        var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
-        if(!timings.parse()) {
-          /* BAD CUE */
+      }
+      var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
+      if(!timings.parse(cue)) {
+        /* BAD CUE */
 
-          // XXX discard cue
+        cue = null
 
-          /* BAD CUE LOOP */
-          while(lines[linePos] != "" && lines[linePos] != undefined) {
-            linePos++
-          }
+        /* BAD CUE LOOP */
+        while(lines[linePos] != "" && lines[linePos] != undefined) {
+          linePos++
         }
       }
 
@@ -155,7 +165,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     // 12
     if(units == "hours" || line[pos] == ":") {
       if(line[pos] != ":") {
-        err("No time unit separator found.")
+        err("No seconds found or minutes is greater than 59.")
         return
       }
       pos++
@@ -190,15 +200,24 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       err("You cannot have more than 59 seconds.")
       return
     }
-    return true
+    return parseInt(val1) * 60 * 60 + parseInt(val2) * 60 + parseInt(val3) + parseInt(val4) / 1000
   }
 
   /*
   http://www.whatwg.org/specs/web-apps/current-work/multipage/the-video-element.html#parse-the-webvtt-settings
   */
-  function settings() {
-    var setting,
-        value
+  function settings(cue) {
+    var seen = [],
+        setting = "",
+        value = ""
+    function otherwise() {
+      if(line[pos] != undefined && NOSPACE.test(line[pos])) {
+        err("Invalid setting.")
+        skip(NOSPACE)
+        return true
+      }
+      return
+    }
     while(line[pos] != undefined) {
       // XXX specification needs update for this
       skip(SPACE)
@@ -208,13 +227,14 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
 
       setting = line[pos]
       pos++
+      if(seen.indexOf(setting) != -1) {
+        err("Duplicate setting.")
+      }
+      seen.push(setting)
+
       // 5
       if(line[pos] != ":") {
         setting = ""
-
-        // XXX specification needs update for this
-        err("No value for setting defined.")
-        return
       }
       // 6 XXX this also skips spaces is that really intentional?
       pos++
@@ -225,69 +245,92 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
         return
       }
       // 8
-      if(setting == "D") {
+      if(setting == "D") { // writing direction
         value = collect(NOSPACE)
         if(value != "vertical" && value != "vertical-lr") {
-          err("'D' setting value must be either 'vertical' or 'vertical-lr'.")
+          err("Writing direction can only be set to 'vertical' or 'vertical-lr'.")
+          continue
         }
-      } else if(setting == "L") {
+        cue.direction = value
+      } else if(setting == "L") { // line position
         value = collect(/[-%0-9]/)
-        // 2 XXX spec should say error!
-        if(
-          line[pos] != undefined &&
-          NOSPACE.test(line[pos])
-        ) {
-          err("'L' setting has incorrect value.")
-          skip(NOSPACE)
+        // 2
+        if(otherwise()) {
           continue
         }
         if(!/\d/.test(value)) {
-          err("'L' setting needs a digit.")
+          err("Line position takes a number or percentage.")
           continue
         }
         // 4
         if(value.indexOf("-", 1) != -1) {
-          err("'L' setting contains '-' at the wrong location.")
+          err("Line position can only have '-' at the start.")
           continue
         }
         //5
-        if(value.lastIndexOf("%", 1) != -1) {
-          err("'L' setting contains '%' at the wrong location.")
+        if(value.indexOf("%") != -1 && value.indexOf("%") != value.length-1) {
+          err("Line position can only have '%' at the end.")
           continue
         }
         // 6
         if(value[0] == "-" && value[value.length-1] == "%") {
-          err("'L' setting value cannot be a negative percentage.")
+          err("Line position cannot be a negative percentage.")
           continue
         }
         // 8
-        if(value[value.length-1] == "%" && parseInt(value) > 100) {
-          err("'L' setting value cannot be percentage greater than 100.")
-          continue
+        if(value[value.length-1] == "%") {
+          if(parseInt(value) > 100) {
+            err("Line position cannot be >100%.")
+            continue
+          }
+          cue.snapToLines = false
         }
-      } else if(setting == "T") {
+        cue.linePosition = parseInt(value)
+      } else if(setting == "T") { // text position
         value = collect(/\d/)
         // 3
         if(line[pos] != "%") {
-          err("'T' setting value must be a percentage.")
+          err("Text position must be a percentage.")
           skip(NOSPACE)
           continue
         }
-        // XXX OMG here the spec has the error handling inside the
-        // setting parsing steps
-
-        // 8
-        if(parseInt(value) > 100) {
-          err("'T' setting value cannot be percentage greater than 100.")
+        // 4-6
+        pos++
+        if(otherwise() || value == "") {
           continue
         }
-      } else if(setting == "S") {
-        // XXX identical to T
-      } else if(setting == "A") {
+        // 7-8
+        if(parseInt(value) > 100) {
+          err("Size cannot be >100%.")
+          continue
+        }
+        cue.textPosition = parseInt(value)
+      } else if(setting == "S") { // size
+        value = collect(/\d/)
+        // 3
+        if(line[pos] != "%") {
+          err("Size must be a percentage.")
+          skip(NOSPACE)
+          continue
+        }
+        // 4-6
+        pos++
+        if(otherwise() || value == "") {
+          continue
+        }
+        // 7-8
+        if(parseInt(value) > 100) {
+          err("Size cannot be >100%.")
+          continue
+        }
+        cue.size = parseInt(value)
+      } else if(setting == "A") { // alignment
         value = collect(NOSPACE)
         if(value != "start" && value != "middle" && value != "end") {
-          err("'A' setting value must be 'start', 'middle', or 'end'.")
+          err("Alignment can only be set to 'start', 'middle', or 'end'.")
+          continue
         }
+        cue.alignment = value
       } else {
         err("Invalid setting.")
         skip(NOSPACE)
@@ -295,11 +338,13 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
   }
 
-  // XXX add cue parameter to set settings on
-  this.parse = function() {
+  this.parse = function(cue) {
     skip(SPACE)
-    if(!timestamp())
+    // XXX set timestamp on cue
+    cue.start = timestamp()
+    if(cue.start == undefined) {
       return
+    }
     skip(SPACE)
     // 6
     if(line[pos] != "-") {
@@ -321,24 +366,24 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     pos++
     // 9
     skip(SPACE)
-    // 10
-    if(!timestamp())
+    // 10 XXX set timestamp on cue
+    cue.end = timestamp()
+    if(cue.end == undefined)
       return
     // 11
     skip(SPACE)
-    settings()
+    settings(cue)
     if(parseError)
       return
     return true
   }
   this.parseTimestamp = function() {
-    if(!timestamp())
-      return
+    var timestamp = timestamp()
     if(line[pos] != undefined) {
       err("Timestamp must not have trailing characters.")
       return
     }
-    return true
+    return timestamp
   }
 }
 
@@ -390,9 +435,11 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           err("Incorrect end tag.")
         }
       } else if(token[0] == "timestamp") {
-        var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err)
-        if(timings.parseTimestamp())
+        var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err),
+            timestamp = timings.parseTimestamp()
+        if(timestamp != undefined) {
           current.children.push({type:"timestamp", value:token[1], parent:current})
+        }
       }
     }
     return result
