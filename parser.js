@@ -69,7 +69,11 @@ var WebVTTParser = function() {
 
       }
       var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
-      if(!timings.parse(cue)) {
+      var previousCueStart = 0
+      if(cues.length > 0) {
+        previousCueStart = cues[cues.length-1].start
+      }
+      if(!timings.parse(cue, previousCueStart)) {
         /* BAD CUE */
 
         cue = null
@@ -90,7 +94,7 @@ var WebVTTParser = function() {
         linePos++
       }
       var cuetextparser = new WebVTTCueTextParser(cue.text, err)
-      cue.tree = cuetextparser.parse()
+      cue.tree = cuetextparser.parse(cue.start, cue.end)
       cues.push(cue)
 
       linePos++
@@ -341,11 +345,14 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
   }
 
-  this.parse = function(cue) {
+  this.parse = function(cue, previousCueStart) {
     skip(SPACE)
     cue.start = timestamp()
     if(cue.start == undefined) {
       return
+    }
+    if(cue.start < previousCueStart) {
+      err("Start timestamp is not greater than or equal to start timestamp of previous cue.")
     }
     skip(SPACE)
     // 6-8
@@ -368,6 +375,9 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     cue.end = timestamp()
     if(cue.end == undefined) {
       return
+    }
+    if(cue.end <= cue.start) {
+      err("End timestamp is not greater than start timestamp.")
     }
     skip(SPACE)
     settings(cue)
@@ -392,9 +402,10 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         errorHandler(message, pos+1)
       }
 
-  this.parse = function() {
+  this.parse = function(cueStart, cueEnd) {
     var result = {children:[]},
-        current = result
+        current = result,
+        timestamps = []
 
     function attach(token) {
       current.children.push({type:"object", name:token[1], classes:token[2], children:[], parent:current})
@@ -442,6 +453,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           err("Incorrect start tag.")
         }
       } else if(token[0] == "end tag") {
+        // XXX check <ruby> content
         if(token[1] == current.name) {
           current = current.parent
         } else if(token[1] == "ruby" && current.name == "rt") {
@@ -453,9 +465,22 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err),
             timestamp = timings.parseTimestamp()
         if(timestamp != undefined) {
+          if(timestamp <= cueStart || timestamp >= cueEnd) {
+            err("Timestamp tag must be between start timestamp and end timestamp.")
+          }
+          if(timestamps.length > 0 && timestamps[timestamps.length-1] >= timestamp) {
+            err("Timestamp tag must be greater than any previous timestamp tag.")
+          }
           current.children.push({type:"timestamp", value:timestamp, parent:current})
+          timestamps.push(timestamp)
         }
       }
+    }
+    while(current.parent) {
+      if(current.name != "v") {
+        err("Required end tag missing.")
+      }
+      current = current.parent
     }
     return result
   }
