@@ -514,8 +514,9 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           result = c
           state = "timestamp tag"
         } else if(c == ">" || c == undefined) {
-          if(c == ">")
+          if(c == ">") {
             pos++
+          }
           return ["start tag", "", [], ""]
         } else {
           result = c
@@ -527,8 +528,9 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         } else if(c == ".") {
           state = "start tag class"
         } else if(c == ">" || c == undefined) {
-          if(c == ">")
+          if(c == ">") {
             pos++
+          }
           return ["start tag", result, [], ""]
         } else {
           result += c
@@ -542,8 +544,9 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           classes.push(buffer)
           buffer = ""
         } else if(c == ">" || c == undefined) {
-          if(c == ">")
+          if(c == ">") {
             pos++
+          }
           classes.push(buffer)
           return ["start tag", result, classes, ""]
         } else {
@@ -551,25 +554,28 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         }
       } else if(state == "start tag annotation") {
         if(c == ">" || c == undefined) {
-          if(c == ">")
+          if(c == ">") {
             pos++
-          buffer = buffer.split(/[\u0020\t\f\r\n]+/).filter(function(item) { if(!item) return; return true }).join(" ")
+          }
+          buffer = buffer.split(/[\u0020\t\f\r\n]+/).filter(function(item) { if(item) return true }).join(" ")
           return ["start tag", result, classes, buffer]
         } else {
           buffer +=c
         }
       } else if(state == "end tag") {
         if(c == ">" || c == undefined) {
-          if(c == ">")
+          if(c == ">") {
             pos++
+          }
           return ["end tag", result]
         } else {
           result += c
         }
       } else if(state == "timestamp tag") {
         if(c == ">" || c == undefined) {
-          if(c == ">")
+          if(c == ">") {
             pos++
+          }
           return ["timestamp", result]
         } else {
           result += c
