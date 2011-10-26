@@ -397,7 +397,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         current = result
 
     function attach(token) {
-      current.children.push({type:"object", name:token[1], children:[], parent:current})
+      current.children.push({type:"object", name:token[1], classes:token[2], children:[], parent:current})
       current = current.children[current.children.length-1]
     }
     function inScope(name) {
@@ -416,6 +416,9 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         current.children.push({type:"text", value:token[1], parent:current})
       } else if(token[0] == "start tag") {
         var name = token[1]
+        if(name != "v" && token[3] != "") {
+          err("Only <v> can have an annotation.")
+        }
         if(
           name == "c" ||
           name == "i" ||
@@ -427,10 +430,14 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         } else if(name == "rt" && current.name == "ruby") {
           attach(token)
         } else if(name == "v") {
-          if(inScope("v"))
+          if(inScope("v")) {
             err("<v> cannot be nested inside itself.")
+          }
           attach(token)
-          token.value = token[3] // annotation
+          current.value = token[3] // annotation
+          if(!token[3]) {
+            err("<v> requires an annotation.")
+          }
         } else {
           err("Incorrect start tag.")
         }
@@ -546,7 +553,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
         if(c == ">" || c == undefined) {
           if(c == ">")
             pos++
-          // XXX normalize buffer
+          buffer = buffer.split(/[\u0020\t\f\r\n]+/).filter(function(item) { if(!item) return; return true }).join(" ")
           return ["start tag", result, classes, buffer]
         } else {
           buffer +=c
@@ -584,7 +591,16 @@ var WebVTTSerializer = function() {
       if(node.type == "text") {
         result += node.value
       } else if(node.type == "object") {
-        result += "<" + node.name + ">"
+        result += "<" + node.name
+        if(node.classes) {
+          for(var y = 0; y < node.classes.length; y++) {
+            result += "." + node.classes[y]
+          }
+        }
+        if(node.value) {
+          result += " " + node.value
+        }
+        result += ">"
         if(node.children)
           result += serializeTree(node.children)
         result += "</" + node.name + ">"
