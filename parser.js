@@ -354,6 +354,9 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     if(cue.start < previousCueStart) {
       err("Start timestamp is not greater than or equal to start timestamp of previous cue.")
     }
+    if(NOSPACE.test(line[pos])) {
+      err("Timestamp not separated from '-->' by whitespace.")
+    }
     skip(SPACE)
     // 6-8
     if(line[pos] != "-") {
@@ -371,6 +374,9 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       return
     }
     pos++
+    if(NOSPACE.test(line[pos])) {
+      err("'-->' not separated from timestamp by whitespace.")
+    }
     skip(SPACE)
     cue.end = timestamp()
     if(cue.end == undefined) {
