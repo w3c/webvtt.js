@@ -43,9 +43,9 @@ var WebVTTParser = function() {
         continue
 
       cue = {
-        start:0,
-        end:0,
         id:"",
+        startTime:0,
+        endTime:0,
         pauseOnExit:false,
         direction:"horizontal",
         snapToLines:true,
@@ -71,7 +71,7 @@ var WebVTTParser = function() {
       var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
       var previousCueStart = 0
       if(cues.length > 0) {
-        previousCueStart = cues[cues.length-1].start
+        previousCueStart = cues[cues.length-1].startTime
       }
       if(!timings.parse(cue, previousCueStart)) {
         /* BAD CUE */
@@ -94,19 +94,19 @@ var WebVTTParser = function() {
         linePos++
       }
       var cuetextparser = new WebVTTCueTextParser(cue.text, err)
-      cue.tree = cuetextparser.parse(cue.start, cue.end)
+      cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
       cues.push(cue)
 
       linePos++
     }
     cues.sort(function(a, b) {
-      if (a.start < b.start)
+      if (a.startTime < b.startTime)
         return -1
-      if (a.start > b.start)
+      if (a.startTime > b.startTime)
         return 1
-      if (a.end > b.end)
+      if (a.endTime > b.endTime)
         return -1
-      if (a.end < b.end)
+      if (a.endTime < b.endTime)
         return 1
       return 0
     })
@@ -358,11 +358,11 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
 
   this.parse = function(cue, previousCueStart) {
     skip(SPACE)
-    cue.start = timestamp()
-    if(cue.start == undefined) {
+    cue.startTime = timestamp()
+    if(cue.startTime == undefined) {
       return
     }
-    if(cue.start < previousCueStart) {
+    if(cue.startTime < previousCueStart) {
       err("Start timestamp is not greater than or equal to start timestamp of previous cue.")
     }
     if(NOSPACE.test(line[pos])) {
@@ -389,11 +389,11 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       err("'-->' not separated from timestamp by whitespace.")
     }
     skip(SPACE)
-    cue.end = timestamp()
-    if(cue.end == undefined) {
+    cue.endTime = timestamp()
+    if(cue.endTime == undefined) {
       return
     }
-    if(cue.end <= cue.start) {
+    if(cue.endTime <= cue.startTime) {
       err("End timestamp is not greater than start timestamp.")
     }
     skip(SPACE)
@@ -659,7 +659,7 @@ var WebVTTSerializer = function() {
     return result
   }
   function serializeCue(cue) {
-    return cue.start + " " + cue.end + "\n" + serializeTree(cue.tree.children) + "\n\n"
+    return cue.startTime + " " + cue.endTime + "\n" + serializeTree(cue.tree.children) + "\n\n"
   }
   this.serialize = function(cues) {
     var result = ""
