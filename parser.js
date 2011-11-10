@@ -45,7 +45,7 @@ var WebVTTParser = function() {
       cue = {
         start:0,
         end:0,
-        identifier:"",
+        id:"",
         pauseOnExit:false,
         direction:"horizontal",
         snapToLines:true,
@@ -58,7 +58,7 @@ var WebVTTParser = function() {
       }
 
       if(lines[linePos].indexOf("-->") == -1) {
-        cue.identifier = lines[linePos]
+        cue.id = lines[linePos]
 
         linePos++
 
