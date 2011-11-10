@@ -99,6 +99,17 @@ var WebVTTParser = function() {
 
       linePos++
     }
+    cues.sort(function(a, b) {
+      if (a.start < b.start)
+        return -1
+      if (a.start > b.start)
+        return 1
+      if (a.end > b.end)
+        return -1
+      if (a.end < b.end)
+        return 1
+      return 0
+    })
     /* END */
     return {cues:cues, errors:errors, time:Date.now()-startTime}
   }
