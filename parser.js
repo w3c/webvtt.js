@@ -3,6 +3,7 @@
 var WebVTTParser = function() {
   this.parse = function(input) {
     //XXX need global search and replace for \0
+    //XXX skyp byte order mark
     var NEWLINE = /\r\n|\r|\n/,
         startTime = Date.now(),
         linePos = 0,
@@ -546,7 +547,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           state = "data"
         }
       } else if(state == "tag") {
-        if(c == " " || c == "\t") {
+        if(c == "\t" || c == "\n" || c == "\f" || c == " ") {
           state = "start tag annotation"
         } else if(c == ".") {
           state = "start tag class"
@@ -565,7 +566,10 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           state = "start tag"
         }
       } else if(state == "start tag") {
-        if(c == " " || c == "\t") {
+        if(c == "\t" || c == "\f" || c == " ") {
+          state = "start tag annotation"
+        } else if(c == "\n") {
+          buffer = c
           state = "start tag annotation"
         } else if(c == ".") {
           state = "start tag class"
@@ -578,9 +582,13 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           result += c
         }
       } else if(state == "start tag class") {
-        if(c == " " || c == "\t") {
+        if(c == "\t" || c == "\f" || c == " ") {
           classes.push(buffer)
           buffer = ""
+          state = "start tag annotation"
+        } else if(c == "\n") {
+          classes.push(buffer)
+          buffer = c
           state = "start tag annotation"
         } else if(c == ".") {
           classes.push(buffer)
