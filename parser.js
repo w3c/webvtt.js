@@ -262,7 +262,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       }
 
       setting = line[pos]
-      if(!spaceBeforeSetting)
+      if(seen.length == 0 && !spaceBeforeSetting)
         err("No whitespace between timestamp and setting.")
       pos++
 
