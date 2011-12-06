@@ -141,7 +141,8 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       pos = 0,
       err = function(message) {
         errorHandler(message, pos+1)
-      }
+      },
+      spaceBeforeSetting = true
   function skip(pattern) {
     while(
       line[pos] != undefined &&
@@ -261,6 +262,8 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       }
 
       setting = line[pos]
+      if(!spaceBeforeSetting)
+        err("No whitespace between timestamp and setting.")
       pos++
 
       if(seen.indexOf(setting) != -1) {
@@ -417,6 +420,10 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
     if(cue.endTime <= cue.startTime) {
       err("End timestamp is not greater than start timestamp.")
+    }
+
+    if(NOSPACE.test(line[pos])) {
+      spaceBeforeSetting = false
     }
     skip(SPACE)
     settings(cue)
