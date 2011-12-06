@@ -522,7 +522,13 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           result += c
         }
       } else if(state == "escape") {
-        if(c == ";") {
+        if(c == "&") {
+          // XXX is this non-conforming?
+          result += buffer
+          buffer = c
+        } else if(/[ampltg]/.test(c)) {
+          buffer += c
+        } else if(c == ";") {
           if(buffer == "&amp") {
             result += "&"
           } else if(buffer == "&lt") {
@@ -534,14 +540,11 @@ var WebVTTCueTextParser = function(line, errorHandler) {
             result += buffer + ";"
           }
           state = "data"
-        } else if(/[ampltg]/.test(c)) {
-          buffer += c
-        } else if(c == undefined) {
+        } else if(c == "<" || c == undefined) {
           err("Incorrect escape.")
           result += buffer
           return ["text", result]
         } else {
-          // XXX spec does not append c
           err("Incorrect escape.")
           result += buffer + c
           state = "data"
