@@ -86,6 +86,7 @@ var WebVTTParser = function() {
         /* BAD CUE */
 
         cue = null
+        linePos++
 
         /* BAD CUE LOOP */
         while(lines[linePos] != "" && lines[linePos] != undefined) {
@@ -255,32 +256,37 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       return
     }
     while(line[pos] != undefined) {
-      // XXX specification needs update for this
       skip(SPACE)
+
       if(line[pos] == undefined) {
         return
       }
 
       setting = line[pos]
       pos++
+
       if(seen.indexOf(setting) != -1) {
         err("Duplicate setting.")
       }
       seen.push(setting)
 
-      // 5
+      if(SPACE.test(line[pos])) {
+        err("No value for setting defined.")
+        continue
+      }
+
+      // 7
       if(line[pos] != ":") {
         setting = ""
       }
-      // 6 XXX this also skips spaces is that really intentional?
       pos++
-      // 7
+
+      // 9
       if(line[pos] == undefined) {
-        // XXX specification needs update for this
         err("No value for setting defined.")
         return
       }
-      // 8
+      // 10
       if(setting == "D") { // writing direction
         value = collect(NOSPACE)
         if(value != "vertical" && value != "vertical-lr") {
