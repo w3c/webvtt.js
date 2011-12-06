@@ -139,9 +139,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       NOSPACE = /[^\u0020\t\f]/,
       line = line,
       pos = 0,
-      parseError = false,
       err = function(message) {
-        parseError = true
         errorHandler(message, pos+1)
       }
   function skip(pattern) {
@@ -422,8 +420,6 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
     skip(SPACE)
     settings(cue)
-    if(parseError)
-      return
     return true
   }
   this.parseTimestamp = function() {
