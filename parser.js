@@ -8,6 +8,7 @@ var WebVTTParser = function() {
         startTime = Date.now(),
         linePos = 0,
         lines = input.split(NEWLINE),
+        alreadyCollected = false,
         cues = [],
         errors = []
     function err(message, col) {
@@ -29,20 +30,24 @@ var WebVTTParser = function() {
 
     /* HEADER */
     while(lines[linePos] != "" && lines[linePos] != undefined) {
-      // XXX not called out in the specification
-      err("No blank line after the signature. Line ignored.")
+      err("No blank line after the signature.")
+      if(lines[linePos].indexOf("-->") != -1) {
+        alreadyCollected = true
+        break
+      }
       linePos++
     }
 
     /* CUE LOOP */
     while(lines[linePos] != undefined) {
       var cue
-      while(lines[linePos] == "") {
+      while(!alreadyCollected && lines[linePos] == "") {
         linePos++
       }
-      if(lines[linePos] == undefined)
-        continue
+      if(!alreadyCollected && lines[linePos] == undefined)
+        break
 
+      /* CUE CREATION */
       cue = {
         id:"",
         startTime:0,
@@ -69,6 +74,9 @@ var WebVTTParser = function() {
         }
 
       }
+
+      /* TIMINGS */
+      alreadyCollected = false
       var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
       var previousCueStart = 0
       if(cues.length > 0) {
@@ -81,6 +89,10 @@ var WebVTTParser = function() {
 
         /* BAD CUE LOOP */
         while(lines[linePos] != "" && lines[linePos] != undefined) {
+          if(lines[linePos].indexOf("-->") != -1) {
+            alreadyCollected = true
+            break
+          }
           linePos++
         }
         continue
@@ -89,16 +101,21 @@ var WebVTTParser = function() {
 
       /* CUE TEXT LOOP */
       while(lines[linePos] != "" && lines[linePos] != undefined) {
+        if(lines[linePos].indexOf("-->") != -1) {
+          err("Blank line missing before cue.")
+          alreadyCollected = true
+          break
+        }
         if(cue.text != "")
           cue.text += "\n"
         cue.text += lines[linePos]
         linePos++
       }
+
+      /* CUE TEXT PROCESSING */
       var cuetextparser = new WebVTTCueTextParser(cue.text, err)
       cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
       cues.push(cue)
-
-      linePos++
     }
     cues.sort(function(a, b) {
       if (a.startTime < b.startTime)
