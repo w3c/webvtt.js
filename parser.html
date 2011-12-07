@@ -5,8 +5,9 @@
  body { font:80% Helvetica Neue, sans-serif }
  h1 { font-size:1.2em }
  textarea { width:100%; height:30em }
+ .copyright { font-size:.8em; color:grey }
 </style>
-<h1>Live WebVTT Validator</h1>
+<h1>Live <a href="http://dev.w3.org/html5/webvtt/">WebVTT</a> Validator</h1>
 <script src=parser.js></script>
 <textarea oninput=test()>WEBVTT
 
@@ -70,3 +71,4 @@
   onhashchange = function(e) { debug(e.newURL) }
   debug(location.href)
 </script>
+<p class=copyright><a href="https://bitbucket.org/annevk/webvtt">Source code</a> available under the MIT license.
