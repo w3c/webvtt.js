@@ -1,3 +1,6 @@
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
 // Not intended to be fast, but if you can make it faster, please help out!
 
 var WebVTTParser = function() {
