@@ -1,4 +1,4 @@
-// Not intended to be fast.
+// Not intended to be fast, but if you can make it faster, please help out!
 
 var WebVTTParser = function() {
   this.parse = function(input) {
@@ -162,9 +162,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
     return str
   }
-  /*
-  http://www.whatwg.org/specs/web-apps/current-work/multipage/the-video-element.html#collect-a-webvtt-timestamp
-  */
+  /* http://dev.w3.org/html5/webvtt/#collect-a-webvtt-timestamp */
   function timestamp() {
     var units = "minutes",
         val1,
@@ -239,88 +237,51 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     return parseInt(val1, 10) * 60 * 60 + parseInt(val2, 10) * 60 + parseInt(val3, 10) + parseInt(val4, 10) / 1000
   }
 
-  /*
-  http://www.whatwg.org/specs/web-apps/current-work/multipage/the-video-element.html#parse-the-webvtt-settings
-  */
-  function settings(cue) {
-    var seen = [],
-        setting = "",
-        value = ""
-    function otherwise() {
-      if(line[pos] != undefined && NOSPACE.test(line[pos])) {
-        err("Invalid setting.")
-        skip(NOSPACE)
-        return true
-      }
-      return
-    }
-    while(line[pos] != undefined) {
-      skip(SPACE)
+  /* http://dev.w3.org/html5/webvtt/#parse-the-webvtt-settings */
+  function parseSettings(input, cue) {
+    var settings = input.split(SPACE),
+        seen = []
+    for(var i=0; i < settings.length; i++) {
+      if(settings[i] == "")
+        continue
 
-      if(line[pos] == undefined) {
-        return
-      }
-
-      setting = line[pos]
-      if(seen.length == 0 && !spaceBeforeSetting)
-        err("No whitespace between timestamp and setting.")
-      pos++
+      var index = settings[i].indexOf(':'),
+          setting = settings[i].slice(0, index)
+          value = settings[i].slice(index + 1)
 
       if(seen.indexOf(setting) != -1) {
         err("Duplicate setting.")
       }
       seen.push(setting)
 
-      if(SPACE.test(line[pos])) {
-        err("No value for setting defined.")
-        continue
-      }
-
-      // 7
-      if(line[pos] != ":") {
-        setting = ""
-      }
-      pos++
-
-      // 9
-      if(line[pos] == undefined) {
+      if(value == "") {
         err("No value for setting defined.")
         return
       }
-      // 10
-      if(setting == "D") { // writing direction
-        value = collect(NOSPACE)
-        if(value != "vertical" && value != "vertical-lr") {
-          err("Writing direction can only be set to 'vertical' or 'vertical-lr'.")
+
+      if(setting == "vertical") { // writing direction
+        if(value != "rl" && value != "lr") {
+          err("Writing direction can only be set to 'rl' or 'rl'.")
           continue
         }
         cue.direction = value
-      } else if(setting == "L") { // line position
-        value = collect(/[-%0-9]/)
-        // 2
-        if(otherwise()) {
-          continue
-        }
+      } else if(setting == "line") { // line position
         if(!/\d/.test(value)) {
           err("Line position takes a number or percentage.")
           continue
         }
-        // 4
         if(value.indexOf("-", 1) != -1) {
           err("Line position can only have '-' at the start.")
           continue
         }
-        //5
         if(value.indexOf("%") != -1 && value.indexOf("%") != value.length-1) {
           err("Line position can only have '%' at the end.")
           continue
         }
-        // 6
         if(value[0] == "-" && value[value.length-1] == "%") {
           err("Line position cannot be a negative percentage.")
           continue
         }
-        // 8
         if(value[value.length-1] == "%") {
           if(parseInt(value, 10) > 100) {
             err("Line position cannot be >100%.")
@@ -329,46 +290,27 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
           cue.snapToLines = false
         }
         cue.linePosition = parseInt(value, 10)
-      } else if(setting == "T") { // text position
-        value = collect(/\d/)
-        // 3
-        if(line[pos] != "%") {
+      } else if(setting == "position") { // text position
+        if(value[value.length-1] != "%") {
           err("Text position must be a percentage.")
-          skip(NOSPACE)
           continue
         }
-        // 4-6
-        pos++
-        if(otherwise() || value == "") {
-          continue
-        }
-        // 7-8
         if(parseInt(value, 10) > 100) {
           err("Size cannot be >100%.")
           continue
         }
         cue.textPosition = parseInt(value, 10)
-      } else if(setting == "S") { // size
-        value = collect(/\d/)
-        // 3
-        if(line[pos] != "%") {
+      } else if(setting == "size") { // size
+        if(value[value.length-1] != "%") {
           err("Size must be a percentage.")
-          skip(NOSPACE)
           continue
         }
-        // 4-6
-        pos++
-        if(otherwise() || value == "") {
-          continue
-        }
-        // 7-8
         if(parseInt(value, 10) > 100) {
           err("Size cannot be >100%.")
           continue
         }
         cue.size = parseInt(value, 10)
-      } else if(setting == "A") { // alignment
-        value = collect(NOSPACE)
+      } else if(setting == "align") { // alignment
         if(value != "start" && value != "middle" && value != "end") {
           err("Alignment can only be set to 'start', 'middle', or 'end'.")
           continue
@@ -376,7 +318,6 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
         cue.alignment = value
       } else {
         err("Invalid setting.")
-        skip(NOSPACE)
       }
     }
   }
@@ -426,7 +367,7 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       spaceBeforeSetting = false
     }
     skip(SPACE)
-    settings(cue)
+    parseSettings(line.substring(pos), cue)
     return true
   }
   this.parseTimestamp = function() {
