@@ -325,8 +325,9 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
         }
         cue.size = parseInt(value, 10)
       } else if(setting == "align") { // alignment
-        if(value != "start" && value != "middle" && value != "end") {
-          err("Alignment can only be set to 'start', 'middle', or 'end'.")
+        var alignValues = ["start", "middle", "end", "left", "right"]
+        if(alignValues.indexOf(value) == -1) {
+          err("Alignment can only be set to one of " + alignValues.join(", ") + ".")
           continue
         }
         cue.alignment = value

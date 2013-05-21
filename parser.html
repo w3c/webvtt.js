@@ -1,4 +1,3 @@
-<!-- irony-free zone -->
 <!doctype html>
 <title>Live WebVTT Validator</title>
 <style>
@@ -32,10 +31,8 @@
 <pre hidden></pre>
 <script>
   function test() {
-    //var start = (new Date).getTime();
     var pa = new WebVTTParser(),
         r = pa.parse(document.getElementsByTagName("textarea")[0].value)
-    //var diff = (new Date).getTime() - start;
     var ol = document.getElementsByTagName("ol")[0],
         p = document.getElementsByTagName("p")[0],
         pre = document.getElementsByTagName("pre")[0]
@@ -44,7 +41,7 @@
       if(r.errors.length == 1)
         p.textContent = "Almost there!"
       else if(r.errors.length < 5)
-        p.textContent = "Just fix these mistakes my man."
+        p.textContent = "Not bad, keep at it!"
       else
         p.textContent = "You are hopeless, RTFS."
       for(var i = 0; i < r.errors.length; i++) {
@@ -71,4 +68,4 @@
   onhashchange = function(e) { debug(e.newURL) }
   debug(location.href)
 </script>
-<p class=copyright><a href="https://github.com/annevk/webvtt">Source code</a> available under CC0.
+<p class=copyright><a href="https://github.com/annevk/webvtt">Source code</a> available under <a href="http://creativecommons.org/publicdomain/zero/1.0/">CC0</a>.
