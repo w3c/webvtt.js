@@ -69,6 +69,17 @@ var WebVTTParser = function() {
       if(lines[linePos].indexOf("-->") == -1) {
         cue.id = lines[linePos]
 
+        /* COMMENTS */
+        if(cue.id.startsWith("NOTE")) {
+          linePos++
+          while(lines[linePos] != "" && lines[linePos] != undefined) {
+            if(lines[linePos].indexOf("-->") != -1)
+              err("Cannot have timestamp in a comment.")
+            linePos++
+          }
+          continue
+        }
+
         linePos++
 
         if(lines[linePos] == "" || lines[linePos] == undefined) {
