@@ -508,7 +508,7 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           // XXX is this non-conforming?
           result += buffer
           buffer = c
-        } else if(/[ampltg]/.test(c)) {
+        } else if(/[abglmnsprt]/.test(c)) {
           buffer += c
         } else if(c == ";") {
           if(buffer == "&amp") {
@@ -517,6 +517,12 @@ var WebVTTCueTextParser = function(line, errorHandler) {
             result += "<"
           } else if(buffer == "&gt") {
             result += ">"
+          } else if(buffer == "&lrm") {
+            result += "\u200e"
+          } else if(buffer == "&rlm") {
+            result += "\u200f"
+          } else if(buffer == "&nbsp") {
+            result += "\u00A0"
           } else {
             err("Incorrect escape.")
             result += buffer + ";"
