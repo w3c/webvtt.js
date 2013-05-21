@@ -1,7 +1,7 @@
-Online VTT format validator
+WebVTT parser and validator
 ===========================
 
-Addresses:
+Relevant links:
 
-* [The validator](http://quuz.org/webvtt/).
-* [VTT Specification](http://dev.w3.org/html5/webvtt/)
+* [Live WebVTT Validator](http://quuz.org/webvtt/).
+* [WebVTT Standard](http://dev.w3.org/html5/webvtt/)
