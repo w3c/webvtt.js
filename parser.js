@@ -4,7 +4,7 @@
 // Not intended to be fast, but if you can make it faster, please help out!
 
 var WebVTTParser = function() {
-  this.parse = function(input) {
+  this.parse = function(input, mode) {
     //XXX need global search and replace for \0
     //XXX skyp byte order mark
     var NEWLINE = /\r\n|\r|\n/,
@@ -131,7 +131,7 @@ var WebVTTParser = function() {
       }
 
       /* CUE TEXT PROCESSING */
-      var cuetextparser = new WebVTTCueTextParser(cue.text, err)
+      var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode)
       cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
       cues.push(cue)
     }
@@ -398,10 +398,12 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
   }
 }
 
-var WebVTTCueTextParser = function(line, errorHandler) {
+var WebVTTCueTextParser = function(line, errorHandler, mode) {
   var line = line,
       pos = 0,
       err = function(message) {
+        if(mode == "metadata")
+          return
         errorHandler(message, pos+1)
       }
 
@@ -429,9 +431,11 @@ var WebVTTCueTextParser = function(line, errorHandler) {
       if(token[0] == "text") {
         current.children.push({type:"text", value:token[1], parent:current})
       } else if(token[0] == "start tag") {
+        if(mode == "chapters")
+          err("Start tags not allowed in chapter title text.")
         var name = token[1]
-        if(name != "v" && token[3] != "") {
-          err("Only <v> can have an annotation.")
+        if(name != "v" && name != "lang" && token[3] != "") {
+          err("Only <v> and <lang> can have an annotation.")
         }
         if(
           name == "c" ||
@@ -452,10 +456,15 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           if(!token[3]) {
             err("<v> requires an annotation.")
           }
+        } else if(name == "lang") {
+          attach(token)
+          current.value = token[3] // language
         } else {
           err("Incorrect start tag.")
         }
       } else if(token[0] == "end tag") {
+        if(mode == "chapters")
+          err("End tags not allowed in chapter title text.")
         // XXX check <ruby> content
         if(token[1] == current.name) {
           current = current.parent
@@ -465,14 +474,16 @@ var WebVTTCueTextParser = function(line, errorHandler) {
           err("Incorrect end tag.")
         }
       } else if(token[0] == "timestamp") {
+        if(mode == "chapters")
+          err("Timestamp not allowed in chapter title text.")
         var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err),
             timestamp = timings.parseTimestamp()
         if(timestamp != undefined) {
           if(timestamp <= cueStart || timestamp >= cueEnd) {
-            err("Timestamp tag must be between start timestamp and end timestamp.")
+            err("Timestamp must be between start timestamp and end timestamp.")
           }
           if(timestamps.length > 0 && timestamps[timestamps.length-1] >= timestamp) {
-            err("Timestamp tag must be greater than any previous timestamp tag.")
+            err("Timestamp must be greater than any previous timestamp.")
           }
           current.children.push({type:"timestamp", value:timestamp, parent:current})
           timestamps.push(timestamp)
