@@ -73,7 +73,7 @@ var WebVTTParser = function() {
            Not part of the specification's parser as these would just be ignored. However,
            we want them to be conforming and not get "Cue identifier cannot be standalone".
          */
-        if(cue.id.indexOf("NOTE", 0) == 0) { // .startsWith fails in Chrome
+        if(/^NOTE($|[ \t])/.test(cue.id)) { // .startsWith fails in Chrome
           linePos++
           while(lines[linePos] != "" && lines[linePos] != undefined) {
             if(lines[linePos].indexOf("-->") != -1)
