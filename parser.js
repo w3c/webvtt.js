@@ -66,6 +66,8 @@ var WebVTTParser = function() {
         tree:null
       }
 
+      var parseTimings = true
+
       if(lines[linePos].indexOf("-->") == -1) {
         cue.id = lines[linePos]
 
@@ -90,6 +92,10 @@ var WebVTTParser = function() {
           continue
         }
 
+        if(lines[linePos].indexOf("-->") == -1) {
+          parseTimings = false
+          err("Cue identifier needs to be followed by timestamp.")
+        }
       }
 
       /* TIMINGS */
@@ -99,7 +105,7 @@ var WebVTTParser = function() {
       if(cues.length > 0) {
         previousCueStart = cues[cues.length-1].startTime
       }
-      if(!timings.parse(cue, previousCueStart)) {
+      if(parseTimings && !timings.parse(cue, previousCueStart)) {
         /* BAD CUE */
 
         cue = null
