@@ -18,15 +18,15 @@ var WebVTTParser = function() {
     }
 
     var line = lines[linePos],
-    lineLength = line.length,
-    signature = "WEBVTT",
-    bom = 0,
-    signature_length = signature.length;
+        lineLength = line.length,
+        signature = "WEBVTT",
+        bom = 0,
+        signature_length = signature.length
 
     /* Byte order mark */
     if (line[0] === "\ufeff") {
-      bom = 1;
-      signature_length += 1;
+      bom = 1
+      signature_length += 1
     }
     /* SIGNATURE */
     if (
