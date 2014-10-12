@@ -10,7 +10,6 @@ var WebVTTParser = function() {
         startTime = Date.now(),
         linePos = 0,
         lines = input.split(NEWLINE),
-        alreadyCollected = false,
         cues = [],
         errors = []
     function err(message, col) {
@@ -39,25 +38,30 @@ var WebVTTParser = function() {
       err("No valid signature. (File needs to start with \"WEBVTT\".)")
     }
 
-    linePos++
+    line = lines[++linePos]
 
     /* HEADER */
-    while(lines[linePos] != "" && lines[linePos] != undefined) {
-      err("No blank line after the signature.")
-      if(lines[linePos].indexOf("-->") != -1) {
-        alreadyCollected = true
-        break
+    while(line !== undefined) {
+      /* look-ahead */
+      if (line === "") {
+        if ((lines[linePos+1] && lines[linePos+1].indexOf("-->") !== -1 )||
+        (lines[linePos+2] && lines[linePos+2].indexOf("-->") !== -1)) {
+          break
+        } else {
+          line = lines[++linePos]
+          continue
+        }
       }
-      linePos++
+      line = lines[++linePos]
     }
 
     /* CUE LOOP */
-    while(lines[linePos] != undefined) {
+    while(line !== undefined) {
       var cue
-      while(!alreadyCollected && lines[linePos] == "") {
-        linePos++
+      while(lines[linePos] === "") {
+        line = lines[++linePos]
       }
-      if(!alreadyCollected && lines[linePos] == undefined)
+      if(line === undefined)
         break
 
       /* CUE CREATION */
@@ -78,7 +82,7 @@ var WebVTTParser = function() {
 
       var parseTimings = true
 
-      if(lines[linePos].indexOf("-->") == -1) {
+      if(lines[linePos].indexOf("-->") === -1) {
         cue.id = lines[linePos]
 
         /* COMMENTS
@@ -109,7 +113,7 @@ var WebVTTParser = function() {
       }
 
       /* TIMINGS */
-      alreadyCollected = false
+      var alreadyCollected = false
       var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
       var previousCueStart = 0
       if(cues.length > 0) {
