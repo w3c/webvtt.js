@@ -51,6 +51,13 @@ var WebVTTParser = function() {
           line = lines[++linePos]
           continue
         }
+      } else {
+        if (line.indexOf(":") !== 1) {
+          err("Metadata header line needs to consist of a name and value separated by a ':' character.")
+          if (line.indexOf("-->") != -1) {
+            err("Cues need to be separated from the Header by a blank line.")
+          }
+        }
       }
       line = lines[++linePos]
     }
