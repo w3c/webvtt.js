@@ -58,6 +58,9 @@ var WebVTTParser = function() {
             err("Cues need to be separated from the Header by a blank line.")
           }
         }
+        if (line.substring(0,6) !== "Region") {
+          err("Metadata headers other than Region are not defined.")
+        }
       }
       line = lines[++linePos]
     }
