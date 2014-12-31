@@ -147,7 +147,7 @@ var WebVTTParser = function() {
           break
         }
         // Instead of running one comparator and one concatenation operator
-        // pre loop, we can run one concatenation operator per loop and
+        // per loop, we can run one concatenation operator per loop and
         // one substring operator EVER.
         cue.text += lines[linePos] + "\n"
         linePos++
@@ -155,7 +155,8 @@ var WebVTTParser = function() {
       cue.text = cue.text.slice(0, -1)
 
       /* CUE TEXT PROCESSING */
-      // Just like line 113
+      // Oddly enough, I tried making this a singleton and when I benchmarked
+      // it, it ran SLOWER. I have no idea why.
       var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode)
       cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
       cues.push(cue)
@@ -456,7 +457,7 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
         if(/^[^:]+:[^:]+$/.test(token[1]))
           token[1] = "00:" + token[1];
         timestamp = new Date("January 1, 1970 " + token[1] + " GMT").getTime() * 1000;
-        if(timestamp != undefined) {
+        if(!isNaN(timestamp)) {
           if(timestamp <= cueStart || timestamp >= cueEnd) {
             err("Timestamp must be between start timestamp and end timestamp.")
           }
