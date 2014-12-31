@@ -6,7 +6,11 @@
 var WebVTTParser = function() {
   this.parse = function(input, mode) {
     //XXX need global search and replace for \0
-    var NEWLINE = /\r\n|\r|\n/,
+    // Experimenting with the two notations: /\r\n|\r|\n/ versus /\r?\n/
+    // they ran the same speed (+/- 1% difference) in Chrome,
+    // but this notation is a little bit more compact. Feel
+    // free to disagree with this minor change
+    var NEWLINE = /\r?\n/,
         startTime = Date.now(),
         linePos = 0,
         lines = input.split(NEWLINE),
@@ -19,22 +23,18 @@ var WebVTTParser = function() {
 
     var line = lines[linePos],
         lineLength = line.length,
-        signature = "WEBVTT",
-        bom = 0,
-        signature_length = signature.length
+        signature = "WEBVTT"
 
-    /* Byte order mark */
-    if (line[0] === "\ufeff") {
-      bom = 1
-      signature_length += 1
-    }
+    // See comments around line 113 -- some changes were made to this class.
+    var timings = new WebVTTCueTimingsAndSettingsParser(err, mode)
+
     /* SIGNATURE */
     if (
-      lineLength < signature_length ||
-      line.indexOf(signature) !== 0+bom ||
-      lineLength > signature_length &&
-      line[signature_length] !== " " &&
-      line[signature_length] !== "\t"
+      // This regular expression runs at twice the speed of the five
+      // comparators and uses fewer bytes in the final program after
+      // minification. The only cost is that regular expresisons are
+      // a bit ugly and hard to read.
+      ! /^\ufeff?WEBVTT(\s.+)?$/.test(line)
     ) {
       err("No valid signature. (File needs to start with \"WEBVTT\".)")
     }
@@ -110,12 +110,18 @@ var WebVTTParser = function() {
 
       /* TIMINGS */
       alreadyCollected = false
-      var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
+      // We're spinning up an oject instance once for every line of the
+      // WebVTT file. That means creating new anonymous functions, new
+      // variables, instantiating everything, running the constructor...
+      // It's a waste of time and RAM. Let's make the settings parser a
+      // singleton and adjust the .parse() function to accept a string.
+      // The error handler can be passed when we build our only instance.
+//      var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
       var previousCueStart = 0
       if(cues.length > 0) {
         previousCueStart = cues[cues.length-1].startTime
       }
-      if(parseTimings && !timings.parse(cue, previousCueStart)) {
+      if(parseTimings && !timings.parse(lines[linePos], cue, previousCueStart)) {
         /* BAD CUE */
 
         cue = null
@@ -140,37 +146,40 @@ var WebVTTParser = function() {
           alreadyCollected = true
           break
         }
-        if(cue.text != "")
-          cue.text += "\n"
-        cue.text += lines[linePos]
+        // Instead of running one comparator and one concatenation operator
+        // pre loop, we can run one concatenation operator per loop and
+        // one substring operator EVER.
+        cue.text += lines[linePos] + "\n"
         linePos++
       }
+      cue.text = cue.text.slice(0, -1)
 
       /* CUE TEXT PROCESSING */
+      // Just like line 113
       var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode)
       cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
       cues.push(cue)
     }
     cues.sort(function(a, b) {
-      if (a.startTime < b.startTime)
-        return -1
-      if (a.startTime > b.startTime)
-        return 1
-      if (a.endTime > b.endTime)
-        return -1
-      if (a.endTime < b.endTime)
-        return 1
-      return 0
+      // One comparator, one subtraction instead of 4
+      // comparators. Speed is only improved by about
+      // 10% but it's more compact.
+      if (a.startTime == b.startTime)
+        return b.endTime - a.endTime
+      else
+        return a.startTime - b.startTime
     })
+
     /* END */
     return {cues:cues, errors:errors, time:Date.now()-startTime}
   }
 }
 
-var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
+// See comments around line 113, this class was slightly tweaked
+var WebVTTCueTimingsAndSettingsParser = function(errorHandler, mode) {
   var SPACE = /[\u0020\t\f]/,
       NOSPACE = /[^\u0020\t\f]/,
-      line = line,
+      line = "",//line,
       pos = 0,
       err = function(message) {
         errorHandler(message, pos+1)
@@ -196,78 +205,32 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     return str
   }
   /* http://dev.w3.org/html5/webvtt/#collect-a-webvtt-timestamp */
+  // There's a fun hack in JavaScript to convert a properly formatted
+  // time string to a number of milliseconds:
+  //     new Date("January 1, 1970 " + input + " GMT").getTime()
+  // This has two limitations:
+  //     1. It cannot accept commas as decimal separators (00:01:15,000)
+  //     2. It assumes the input starts with hours (00:15.000 = 15 minutes, not 15 seconds)
+  // We can speed up timestamp parsing and reduce program complexity at
+  // the cost of error message specificity.
   function timestamp() {
-    var units = "minutes",
-        val1,
-        val2,
-        val3,
-        val4
-    // 3
-    if(line[pos] == undefined) {
-      err("No timestamp found.")
+    // Extract the whole timestamp string
+    var timestampStr = line.substr(pos).split(SPACE)[0]
+    pos += timestampStr.length
+    // If there's a comma, assume it's a decimal separator and convert to period
+    timestampStr = timestampStr.replace(',', '.')
+    // If there's only one colon, add hours
+    if(/^[^:]+:[^:]+$/.test(timestampStr))
+      timestampStr = "00:" + timestampStr;
+    // Convert from string to time
+    // Multiply by 1000 to convert milliseconds to seconds
+    var ts = new Date("January 1, 1970 " + timestampStr + " GMT").getTime() * 1000;
+
+    if( isNaN(ts) ) {
+      err("Timestamp is invalid.")
       return
     }
-    // 4
-    if(!/\d/.test(line[pos])) {
-      err("Timestamp must start with a character in the range 0-9.")
-      return
-    }
-    // 5-7
-    val1 = collect(/\d/)
-    if(val1.length > 2 || parseInt(val1, 10) > 59) {
-      units = "hours"
-    }
-    // 8
-    if(line[pos] != ":") {
-      err("No time unit separator found.")
-      return
-    }
-    pos++
-    // 9-11
-    val2 = collect(/\d/)
-    if(val2.length != 2) {
-      err("Must be exactly two digits.")
-      return
-    }
-    // 12
-    if(units == "hours" || line[pos] == ":") {
-      if(line[pos] != ":") {
-        err("No seconds found or minutes is greater than 59.")
-        return
-      }
-      pos++
-      val3 = collect(/\d/)
-      if(val3.length != 2) {
-        err("Must be exactly two digits.")
-        return
-      }
-    } else {
-      val3 = val2
-      val2 = val1
-      val1 = "0"
-    }
-    // 13
-    if(line[pos] != ".") {
-      err("No decimal separator (\".\") found.")
-      return
-    }
-    pos++
-    // 14-16
-    val4 = collect(/\d/)
-    if(val4.length != 3) {
-      err("Milliseconds must be given in three digits.")
-      return
-    }
-    // 17
-    if(parseInt(val2, 10) > 59) {
-      err("You cannot have more than 59 minutes.")
-      return
-    }
-    if(parseInt(val3, 10) > 59) {
-      err("You cannot have more than 59 seconds.")
-      return
-    }
-    return parseInt(val1, 10) * 60 * 60 + parseInt(val2, 10) * 60 + parseInt(val3, 10) + parseInt(val4, 10) / 1000
+    return ts
   }
 
   /* http://dev.w3.org/html5/webvtt/#parse-the-webvtt-settings */
@@ -278,9 +241,11 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
       if(settings[i] == "")
         continue
 
-      var index = settings[i].indexOf(':'),
-          setting = settings[i].slice(0, index)
-          value = settings[i].slice(index + 1)
+      // It's faster to use a single split() than
+      // indexOf() and two slice()'s
+      var parts = settings[i].split(':'),
+          setting = parts[0],
+          value = parts[1]
 
       if(seen.indexOf(setting) != -1) {
         err("Duplicate setting.")
@@ -294,25 +259,17 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
 
       if(setting == "vertical") { // writing direction
         if(value != "rl" && value != "lr") {
-          err("Writing direction can only be set to 'rl' or 'rl'.")
+          // This said 'rl' or 'rl' -- probably a typo
+          err("Writing direction can only be set to 'rl' or 'lr'.")
           continue
         }
         cue.direction = value
       } else if(setting == "line") { // line position
-        if(!/\d/.test(value)) {
+        // The following regular expession will accomplish the goal of
+        // all four if statements here. However by using the regular
+        // expression we lose the more specific error messaging.
+        if( ! /^(-?\d+$|\d+%$)/.test(value) ) {
           err("Line position takes a number or percentage.")
-          continue
-        }
-        if(value.indexOf("-", 1) != -1) {
-          err("Line position can only have '-' at the start.")
-          continue
-        }
-        if(value.indexOf("%") != -1 && value.indexOf("%") != value.length-1) {
-          err("Line position can only have '%' at the end.")
-          continue
-        }
-        if(value[0] == "-" && value[value.length-1] == "%") {
-          err("Line position cannot be a negative percentage.")
           continue
         }
         if(value[value.length-1] == "%") {
@@ -356,7 +313,10 @@ var WebVTTCueTimingsAndSettingsParser = function(line, errorHandler) {
     }
   }
 
-  this.parse = function(cue, previousCueStart) {
+  // See line 113
+  this.parse = function(lineToParse, cue, previousCueStart) {
+    line = lineToParse
+    pos = 0
     skip(SPACE)
     cue.startTime = timestamp()
     if(cue.startTime == undefined) {
@@ -454,11 +414,8 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
           err("Only <v> and <lang> can have an annotation.")
         }
         if(
-          name == "c" ||
-          name == "i" ||
-          name == "b" ||
-          name == "u" ||
-          name == "ruby"
+          // Regular expression is more compact and runs twice as fast
+          /^(c|i|b|u|ruby)$/.test(name)
         ) {
           attach(token)
         } else if(name == "rt" && current.name == "ruby") {
@@ -492,8 +449,13 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
       } else if(token[0] == "timestamp") {
         if(mode == "chapters")
           err("Timestamp not allowed in chapter title text.")
-        var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err),
-            timestamp = timings.parseTimestamp()
+        // Why spin up an instance of WebVTCueTimingsAndSettingsParser just to run one function?
+        //var timings = new WebVTTCueTimingsAndSettingsParser(token[1], err, mode),
+        //timestamp = timings.parseTimestamp()
+        token[1] = token[1].replace(',', '.')
+        if(/^[^:]+:[^:]+$/.test(token[1]))
+          token[1] = "00:" + token[1];
+        timestamp = new Date("January 1, 1970 " + token[1] + " GMT").getTime() * 1000;
         if(timestamp != undefined) {
           if(timestamp <= cueStart || timestamp >= cueEnd) {
             err("Timestamp must be between start timestamp and end timestamp.")
@@ -515,68 +477,71 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
     return result
   }
 
+  // This function is, understandably, where we spend most of our time. As such
+  // any changes that can be made to improve its speed are important
+  // Instead of having to walk through several "if" statements on a per-character
+  // basis, it might improve speed a lot to have multiple mini-while loops
+  // within each state and only break when the state changes
   function nextToken() {
-    var state = "data",
+
+    // Although it doesn't really impact speed, string literals cannot
+    // be minified. Just to make my OCD happy I converted all states to
+    // integers
+
+    // "data" = 1
+    // "escape" = doesn't exist anymore
+    // "tag" = 2
+    // "start tag" = 3
+    // "start tag class" = 4
+    // "start tag annotation" = 5
+    // "end tag" = 6
+    // "timestamp tag" = 7
+
+    var state = 1,
         result = "",
         buffer = "",
-        classes = []
-    while(line[pos-1] != undefined || pos == 0) {
+        classes = [],
+        escapes = {
+          '&amp': '&',
+          '&lt': '<',
+          '&gt': '>',
+          '&lrm': '\u200e',
+          '&rlm': '\u200f',
+          '&nbsp': '\u00A0'
+        }
+    // Running benchmarks in Chrome, pos <= line.length is quicker
+    // than line[pos-1] != undefined
+    while(pos <= line.length) {
       var c = line[pos]
-      if(state == "data") {
+      if(state == 1) {
         if(c == "&") {
-          buffer = c
-          state = "escape"
+          // We can grab entire escape sequences in one bite
+          buffer = line.substring(pos, line.indexOf(';', pos))
+          if( escapes[buffer] )
+            result += escapes[ buffer ]
+          else {
+            err("Incorrect escape.")
+            result += buffer + ";"
+          }
         } else if(c == "<" && result == "") {
-          state = "tag"
+          state = 2
         } else if(c == "<" || c == undefined) {
           return ["text", result]
         } else {
           result += c
         }
-      } else if(state == "escape") {
-        if(c == "&") {
-          err("Incorrect escape.")
-          result += buffer
-          buffer = c
-        } else if(/[abglmnsprt]/.test(c)) {
-          buffer += c
-        } else if(c == ";") {
-          if(buffer == "&amp") {
-            result += "&"
-          } else if(buffer == "&lt") {
-            result += "<"
-          } else if(buffer == "&gt") {
-            result += ">"
-          } else if(buffer == "&lrm") {
-            result += "\u200e"
-          } else if(buffer == "&rlm") {
-            result += "\u200f"
-          } else if(buffer == "&nbsp") {
-            result += "\u00A0"
-          } else {
-            err("Incorrect escape.")
-            result += buffer + ";"
-          }
-          state = "data"
-        } else if(c == "<" || c == undefined) {
-          err("Incorrect escape.")
-          result += buffer
-          return ["text", result]
-        } else {
-          err("Incorrect escape.")
-          result += buffer + c
-          state = "data"
-        }
-      } else if(state == "tag") {
-        if(c == "\t" || c == "\n" || c == "\f" || c == " ") {
-          state = "start tag annotation"
+      } else if(state == 2) {
+        // Bencharmking this it was 30% faster in Chrome
+//        if(c == "\t" || c == "\n" || c == "\f" || c == " ") {
+        if(/[\t\n\f ]/.test(c)) {
+          state = 5
         } else if(c == ".") {
-          state = "start tag class"
+          state = 4
         } else if(c == "/") {
-          state = "end tag"
+          state = 6
         } else if(/\d/.test(c)) {
           result = c
-          state = "timestamp tag"
+          state = 7
         } else if(c == ">" || c == undefined) {
           if(c == ">") {
             pos++
@@ -584,16 +549,16 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
           return ["start tag", "", [], ""]
         } else {
           result = c
-          state = "start tag"
+          state = 3
         }
-      } else if(state == "start tag") {
-        if(c == "\t" || c == "\f" || c == " ") {
-          state = "start tag annotation"
+      } else if(state == 3) {
+        if(/[\t\f ]/.test(c)) {
+          state = 5
         } else if(c == "\n") {
           buffer = c
-          state = "start tag annotation"
+          state = 5
         } else if(c == ".") {
-          state = "start tag class"
+          state = 4
         } else if(c == ">" || c == undefined) {
           if(c == ">") {
             pos++
@@ -602,15 +567,15 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
         } else {
           result += c
         }
-      } else if(state == "start tag class") {
-        if(c == "\t" || c == "\f" || c == " ") {
+      } else if(state == 4) {
+        if(/[\t\f ]/.test(c)) {
           classes.push(buffer)
           buffer = ""
-          state = "start tag annotation"
+          state = 5
         } else if(c == "\n") {
           classes.push(buffer)
           buffer = c
-          state = "start tag annotation"
+          state = 5
         } else if(c == ".") {
           classes.push(buffer)
           buffer = ""
@@ -623,17 +588,19 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
         } else {
           buffer += c
         }
-      } else if(state == "start tag annotation") {
+      } else if(state == 5) {
         if(c == ">" || c == undefined) {
           if(c == ">") {
             pos++
           }
-          buffer = buffer.split(/[\u0020\t\f\r\n]+/).filter(function(item) { if(item) return true }).join(" ")
+          // A faster and more concise way to accomplish the same goal
+//          buffer = buffer.split(/[\u0020\t\f\r\n]+/).filter(function(item) { if(item) return true }).join(" ")
+          buffer = buffer.replace(/[\u0020\t\f\r\n]+/g, ' ').trim()
           return ["start tag", result, classes, buffer]
         } else {
           buffer +=c
         }
-      } else if(state == "end tag") {
+      } else if(state == 6) {
         if(c == ">" || c == undefined) {
           if(c == ">") {
             pos++
@@ -642,7 +609,7 @@ var WebVTTCueTextParser = function(line, errorHandler, mode) {
         } else {
           result += c
         }
-      } else if(state == "timestamp tag") {
+      } else if(state == 7) {
         if(c == ">" || c == undefined) {
           if(c == ">") {
             pos++
