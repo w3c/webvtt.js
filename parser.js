@@ -5,12 +5,9 @@
 
 var WebVTTParser = function() {
   this.parse = function(input, mode) {
-    //XXX need global search and replace for \0
-    // Experimenting with the two notations: /\r\n|\r|\n/ versus /\r?\n/
-    // they ran the same speed (+/- 1% difference) in Chrome,
-    // but this notation is a little bit more compact. Feel
-    // free to disagree with this minor change
-    var NEWLINE = /\r?\n/,
+    input = input.replace(/\0/g, '')
+    
+    var NEWLINE = /\r\n|\r|\n/,
         startTime = Date.now(),
         linePos = 0,
         lines = input.split(NEWLINE),
