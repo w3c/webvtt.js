@@ -6,7 +6,7 @@
 var WebVTTParser = function() {
   this.parse = function(input, mode) {
     input = input.replace(/\0/g, '')
-    
+
     var NEWLINE = /\r\n|\r|\n/,
         startTime = Date.now(),
         linePos = 0,
@@ -174,7 +174,7 @@ var WebVTTParser = function() {
 }
 
 // See comments around line 113, this class was slightly tweaked
-var WebVTTCueTimingsAndSettingsParser = function(errorHandler, mode) {
+var WebVTTCueTimingsAndSettingsParser = function(errorHandler) {
   var SPACE = /[\u0020\t\f]/,
       NOSPACE = /[^\u0020\t\f]/,
       line = "",//line,
@@ -221,8 +221,8 @@ var WebVTTCueTimingsAndSettingsParser = function(errorHandler, mode) {
     if(/^[^:]+:[^:]+$/.test(timestampStr))
       timestampStr = "00:" + timestampStr;
     // Convert from string to time
-    // Multiply by 1000 to convert milliseconds to seconds
-    var ts = new Date("January 1, 1970 " + timestampStr + " GMT").getTime() * 1000;
+    // DIVIDE by 1000 to convert milliseconds to seconds
+    var ts = new Date("January 1, 1970 " + timestampStr + " GMT").getTime() / 1000;
 
     if( isNaN(ts) ) {
       err("Timestamp is invalid.")
