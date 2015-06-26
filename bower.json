@@ -10,7 +10,7 @@
   "keywords": [
     "WebVTT"
   ],
-  "license": "MIT",
+  "license": "CC0-1.0",
   "ignore": [
     "**/.*",
     "node_modules",
