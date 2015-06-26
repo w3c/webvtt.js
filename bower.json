@@ -1,0 +1,21 @@
+{
+  "name": "webvtt",
+  "version": "1.0.0",
+  "homepage": "https://github.com/annevk/webvtt",
+  "authors": [
+    "annevk@annevk.nl"
+  ],
+  "description": "WebVTT parser and validator",
+  "main": "parser.js",
+  "keywords": [
+    "WebVTT"
+  ],
+  "license": "CC0-1.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
