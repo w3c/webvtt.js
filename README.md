@@ -20,14 +20,14 @@ To parse a WebVTT string:
 
 ```js
 import { WebVTTParser } from 'webvtt-parser';
-let parser = new WebVTTParser();
-let tree = parser.parse(someVTT, 'metadata');
+const parser = new WebVTTParser();
+const tree = parser.parse(someVTT, 'metadata');
 ```
 
 To serialize a WebVTT tree to string:
 
 ```js
 import { WebVTTSerializer } from 'webvtt-parser';
-let seri = new WebVTTSerializer();
-let tree = seri.serialize(vttTree.cues)
+const seri = new WebVTTSerializer();
+const tree = seri.serialize(vttTree.cues)
 ```
