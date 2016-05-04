@@ -4,7 +4,7 @@
   "description": "WebVTT parser and validator",
   "main": "parser.js",
   "scripts": {
-    "test": "echo 'No tests yet' && exit 42"
+    "test": "node -c parser.js"
   },
   "repository": {
     "type": "git",
