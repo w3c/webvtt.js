@@ -274,8 +274,9 @@
     /* http://dev.w3.org/html5/webvtt/#parse-the-webvtt-settings */
     function parseSettings(input, cue) {
       var settings = input.split(SPACE),
-          seen = []
-      for(var i=0; i < settings.length; i++) {
+          seen = [],
+          len = settings.length;          
+      for(var i=0; i < len; i++) {
         if(settings[i] == "")
           continue
 
@@ -664,14 +665,16 @@
   var WebVTTSerializer = function() {
     function serializeTree(tree) {
       var result = ""
-      for (var i = 0; i < tree.length; i++) {
+      var len = tree.length
+      for (var i = 0; i < len; i++) {
         var node = tree[i]
         if(node.type == "text") {
           result += node.value
         } else if(node.type == "object") {
           result += "<" + node.name
           if(node.classes) {
-            for(var y = 0; y < node.classes.length; y++) {
+            var len = node.classes.length
+            for(var y = 0; y < len; y++) {
               result += "." + node.classes[y]
             }
           }
@@ -693,7 +696,8 @@
     }
     this.serialize = function(cues) {
       var result = ""
-      for(var i=0;i<cues.length;i++) {
+      var len = cues.length
+      for(var i=0;i<len;i++) {
         result += serializeCue(cues[i])
       }
       return result
