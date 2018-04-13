@@ -280,7 +280,7 @@
           continue
 
         var index = settings[i].indexOf(':'),
-            setting = settings[i].slice(0, index)
+            setting = settings[i].slice(0, index),
             value = settings[i].slice(index + 1)
 
         if(seen.indexOf(setting) != -1) {
