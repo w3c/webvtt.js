@@ -4,25 +4,25 @@
 // Not intended to be fast, but if you can make it faster, please help out!
 
 (function () {
-  var WebVTTParser = function() {
-    this.parse = function(input, mode) {
+  var WebVTTParser = function () {
+    this.parse = function (input, mode) {
       //XXX need global search and replace for \0
       var NEWLINE = /\r\n|\r|\n/,
-          startTime = Date.now(),
-          linePos = 0,
-          lines = input.split(NEWLINE),
-          alreadyCollected = false,
-          cues = [],
-          errors = []
+        startTime = Date.now(),
+        linePos = 0,
+        lines = input.split(NEWLINE),
+        alreadyCollected = false,
+        cues = [],
+        errors = []
       function err(message, col) {
-        errors.push({message:message, line:linePos+1, col:col})
+        errors.push({ message: message, line: linePos + 1, col: col })
       }
 
       var line = lines[linePos],
-          lineLength = line.length,
-          signature = "WEBVTT",
-          bom = 0,
-          signature_length = signature.length
+        lineLength = line.length,
+        signature = "WEBVTT",
+        bom = 0,
+        signature_length = signature.length
 
       /* Byte order mark */
       if (line[0] === "\ufeff") {
@@ -32,7 +32,7 @@
       /* SIGNATURE */
       if (
         lineLength < signature_length ||
-        line.indexOf(signature) !== 0+bom ||
+        line.indexOf(signature) !== 0 + bom ||
         lineLength > signature_length &&
         line[signature_length] !== " " &&
         line[signature_length] !== "\t"
@@ -40,26 +40,45 @@
         err("No valid signature. (File needs to start with \"WEBVTT\".)")
       }
 
-      linePos++
 
-      /* HEADER */
-      while(lines[linePos] != "" && lines[linePos] != undefined) {
-        err("No blank line after the signature.")
-        if(lines[linePos].indexOf("-->") != -1) {
+    line = lines[++linePos]
+
+    /* HEADER */
+    while(line !== undefined) {
+      /* look-ahead */
+      if (line === "") {
+        if ((lines[linePos+1] && lines[linePos+1].indexOf("-->") !== -1 )||
+        (lines[linePos+2] && lines[linePos+2].indexOf("-->") !== -1)) {
+          break
+        } else {
+          line = lines[++linePos]
+          continue
+        }
+      } else {
+        if ((line.match(/:/g) || []).length !== 1) {
+          err("Metadata header line needs to consist of a name and value separated by a ':' character.")
+          if (line.indexOf("-->") != -1) {
+            err("Cues need to be separated from the Header by a blank line.")
+            alreadyCollected = true
+          }
+        }
+        if (line.substring(0,6) !== "Region") {
+          err("Metadata headers other than Region are not defined.")
           alreadyCollected = true
-          break
         }
-        linePos++
       }
+      line = lines[++linePos]
+    }
 
-      /* CUE LOOP */
-      while(lines[linePos] != undefined) {
-        var cue
-        while(!alreadyCollected && lines[linePos] == "") {
-          linePos++
-        }
-        if(!alreadyCollected && lines[linePos] == undefined)
-          break
+    /* CUE LOOP */
+    while(line !== undefined) {
+      var cue
+      while(!alreadyCollected && lines[linePos] === "") {
+        line = lines[++linePos]
+      }
+      if(!alreadyCollected && line === undefined)
+        break
+
 
         /* CUE CREATION */
         cue = {
