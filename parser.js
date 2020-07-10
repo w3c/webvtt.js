@@ -243,6 +243,10 @@
           return
         }
       } else {
+        if (val1.length != 2) {
+          err("Must be exactly two digits.")
+          return
+        }
         val3 = val2
         val2 = val1
         val1 = "0"
