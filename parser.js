@@ -6,7 +6,8 @@
 (function () {
   var WebVTTParser = function() {
     this.parse = function(input, mode) {
-      //XXX need global search and replace for \0
+      // global search and replace for \0
+      input = input.replace(/\0/g, '\uFFFD');
       var NEWLINE = /\r\n|\r|\n/,
           startTime = Date.now(),
           linePos = 0,
