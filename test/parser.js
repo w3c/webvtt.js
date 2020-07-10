@@ -24,7 +24,7 @@ describe("Tests the parser", () => {
     it("matches the expected assertions for " + path, () => {
       const js = fs.readFileSync(dir + path.replace(/\.vtt$/, '.js'), 'utf-8');
       const res = parser.parse(vtt);
-      var cues = res.cues;
+      var cues = res.cues.map(c => Object.assign({}, c, {vertical: c.direction === 'horizontal' ? '' : c.direction}));
       eval(js);
     });
   }
