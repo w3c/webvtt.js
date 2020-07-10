@@ -348,7 +348,19 @@
             err("Size cannot be >100%.")
             continue
           }
-          cue.size = parseInt(value, 10)
+          var size = value.slice(0, value.length -1)
+          if (size === undefined || size === "" || isNaN(size)) {
+            err("Size needs to be a number")
+            size = 100
+            continue
+          } else {
+            size = parseFloat(size)
+            if (size < 0 || size > 100) {
+              err("Size needs to be between 0 and 100%.")
+              continue;
+            }
+          }
+          cue.size = size
         } else if(setting == "align") { // alignment
           var alignValues = ["start", "middle", "end", "left", "right"]
           if(alignValues.indexOf(value) == -1) {
