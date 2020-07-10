@@ -4,6 +4,17 @@
 // Not intended to be fast, but if you can make it faster, please help out!
 
 (function () {
+  var defaultCueSettings = {
+    direction:"horizontal",
+    snapToLines:true,
+    linePosition:"auto",
+    lineAlign:"start",
+    textPosition:"auto",
+    positionAlign:"auto",
+    size:100,
+    alignment:"center",
+  };
+
   var WebVTTParser = function() {
     this.parse = function(input, mode) {
       // global search and replace for \0
@@ -63,7 +74,7 @@
           break
 
         /* CUE CREATION */
-        cue = {
+        cue = Object.assign({}, defaultCueSettings, {
           id:"",
           startTime:0,
           endTime:0,
@@ -78,7 +89,7 @@
           alignment:"center",
           text:"",
           tree:null
-        }
+        })
 
         var parseTimings = true
 
@@ -352,6 +363,9 @@
           }
           cue.snapToLines = !isPercent;
           cue.linePosition = parseFloat(numVal)
+          if (parseFloat(numVal).toString() !== numVal) {
+            cue.nonSerializable = true;
+          }
         } else if(setting == "position") { // text position and optional positionAlign
           if (/,/.test(value)) {
             var comp = value.split(',')
@@ -719,6 +733,36 @@
   }
 
   var WebVTTSerializer = function() {
+    function serializeTimestamp(seconds) {
+      const ms = ("" + (seconds - Math.floor(seconds)).toFixed(3)*1000).padEnd(3, "0");
+      let h = 0, m = 0, s = 0;
+      if (seconds >= 3600) {
+        h = Math.floor(seconds/3600);
+      }
+      m = Math.floor((seconds - 3600*h) / 60);
+      s = Math.floor(seconds - 3600*h - 60*m);
+      return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
+    }
+    function serializeCueSettings(cue) {
+      var result = ""
+      const nonDefaultSettings = Object.keys(defaultCueSettings).filter(s => cue[s] !== defaultCueSettings[s]);
+      if (nonDefaultSettings.includes("direction")) {
+        result+= " vertical:" + cue.direction
+      }
+      if (nonDefaultSettings.includes("alignment")) {
+        result+= " align:" + cue.alignment
+      }
+      if (nonDefaultSettings.includes("size")) {
+        result+= " size:" + cue.size + "%"
+      }
+      if (nonDefaultSettings.includes("lineAlign") || nonDefaultSettings.includes("linePosition")) {
+        result += " line:" + cue.linePosition +  (cue.snapToLines ? "" : "%") + (cue.lineAlign && cue.lineAlign != defaultCueSettings.lineAlign ? "," + cue.lineAlign : "")
+      }
+      if (nonDefaultSettings.includes("textPosition") || nonDefaultSettings.includes("positionAlign")) {
+        result += " position:" + cue.textPosition + "%" + (cue.positionAlign && cue.positionAlign !== defaultCueSettings.positionAlign ? "," + cue.positionAlign : "")
+      }
+      return result
+    }
     function serializeTree(tree) {
       var result = ""
       for (var i = 0; i < tree.length; i++) {
@@ -746,10 +790,15 @@
       return result
     }
     function serializeCue(cue) {
-      return cue.startTime + " " + cue.endTime + "\n" + serializeTree(cue.tree.children) + "\n\n"
+      return (cue.id ? cue.id + "\n" : "")
+        + serializeTimestamp(cue.startTime)
+        + " --> "
+        + serializeTimestamp(cue.endTime)
+        + serializeCueSettings(cue)
+        + "\n" + serializeTree(cue.tree.children) + "\n\n"
     }
     this.serialize = function(cues) {
-      var result = ""
+      var result = "WEBVTT\n\n"
       for(var i=0;i<cues.length;i++) {
         result += serializeCue(cues[i])
       }
