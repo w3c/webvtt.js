@@ -28,7 +28,11 @@ describe("Tests the parser", () => {
         // WPT model that exposes "vertical" as a field
         vertical: c.direction === 'horizontal' ? '' : c.direction,
         // WPT exposes alignment as align
-        align: c.alignment
+        align: c.alignment,
+        // WPT exposes linePosition as line
+        line: c.linePosition,
+        // WPT exposes textPosition as position
+        position: c.textPosition
       }));
       eval(js);
     });
