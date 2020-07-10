@@ -11,6 +11,10 @@ function assert_true (a, b) {
   return assert(a, b);
 }
 
+function assert_false (a, b) {
+  return assert.isFalse(a, b);
+}
+
 
 let parser;
 describe("Tests the parser", () => {
