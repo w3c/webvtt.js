@@ -72,7 +72,8 @@
           snapToLines:true,
           linePosition:"auto",
           lineAlign:"start",
-          textPosition:50,
+          textPosition:"auto",
+          positionAlign:"auto",
           size:100,
           alignment:"center",
           text:"",
@@ -351,16 +352,33 @@
           }
           cue.snapToLines = !isPercent;
           cue.linePosition = parseFloat(numVal)
-        } else if(setting == "position") { // text position
+        } else if(setting == "position") { // text position and optional positionAlign
+          if (/,/.test(value)) {
+            var comp = value.split(',')
+            value = comp[0]
+            var positionAlign = comp[1]
+          }
           if(value[value.length-1] != "%") {
             err("Text position must be a percentage.")
             continue
           }
-          if(parseInt(value, 10) > 100) {
-            err("Size cannot be >100%.")
+          if(parseInt(value, 10) > 100 || parseInt(value, 10) < 0) {
+            err("Text position needs to be between 0 and 100%.")
             continue
           }
-          cue.textPosition = parseInt(value, 10)
+          numVal = value.slice(0, value.length-1)
+          if (numVal === '' || isNaN(numVal) || !isFinite(numVal)) {
+            err("Line position needs to be a number")
+            continue
+          }
+          if (positionAlign !== undefined) {
+            if (!["line-left", "center", "line-right"].includes(positionAlign)) {
+              err("Position alignment needs to be one of line-left, center or line-right")
+              continue
+            }
+            cue.positionAlign = positionAlign
+          }
+          cue.textPosition = parseFloat(numVal)
         } else if(setting == "size") { // size
           if(value[value.length-1] != "%") {
             err("Size must be a percentage.")
