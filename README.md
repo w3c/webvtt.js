@@ -4,12 +4,12 @@ WebVTT parser and validator
 Relevant links:
 
 * [Live WebVTT Validator](http://quuz.org/webvtt/).
-* [WebVTT Standard](http://dev.w3.org/html5/webvtt/)
+* [WebVTT Specification](https://w3c.github.io/webvtt/)
 
 ## Install
 
-You can simply load the `parser.js` file into your HTML page and the API will become available on
-`window`. Alternatively you can install it using bower (`webvtt`) or npm (`webvtt-parser`).
+You can load the `parser.js` file into your HTML page and the API will become available on
+`window`. Alternatively you can install it using bower (`webvtt`) or npm (`npm install webvtt-parser`).
 
 ## API
 
