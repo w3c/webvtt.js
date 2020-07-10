@@ -1,14 +1,14 @@
 {
   "name": "webvtt-parser",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "WebVTT parser and validator",
   "main": "parser.js",
   "scripts": {
-    "test": "node -c parser.js"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/annevk/webvtt.git"
+    "url": "https://github.com/w3c/webvtt.js.git"
   },
   "keywords": [
     "WebVTT"
@@ -17,9 +17,9 @@
   "contributors": [],
   "license": "CC0",
   "bugs": {
-    "url": "https://github.com/annevk/webvtt/issues"
+    "url": "https://github.com/w3c/webvtt.js/issues"
   },
-  "homepage": "https://github.com/annevk/webvtt",
+  "homepage": "https://github.com/w3c/webvtt.js",
   "devDependencies": {
     "chai": "^4.2.0",
     "mocha": "^8.0.1"
