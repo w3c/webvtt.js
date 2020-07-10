@@ -106,6 +106,7 @@
           if(lines[linePos].indexOf("-->") == -1) {
             parseTimings = false
             err("Cue identifier needs to be followed by timestamp.")
+            continue
           }
         }
 
