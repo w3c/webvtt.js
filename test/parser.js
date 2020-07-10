@@ -1,6 +1,7 @@
 const fs = require("fs");
 const { assert } = require('chai');
 const WebVTTParser = require("../parser.js").WebVTTParser;
+const WebVTTSerializer = require("../parser.js").WebVTTSerializer;
 
 // Adapting test_harness.js into chai asserts
 function assert_equals (a, b, c) {
@@ -16,10 +17,11 @@ function assert_false (a, b) {
 }
 
 
-let parser;
+let parser ,seri;
 describe("Tests the parser", () => {
   before(() => {
     parser = new WebVTTParser();
+    seri = new WebVTTSerializer();
   });
   const dir = 'test/wpt-file-parsing/';
   const files = fs.readdirSync(dir);
@@ -40,5 +42,13 @@ describe("Tests the parser", () => {
       }));
       eval(js);
     });
+    it("can parse the serialized version of the parsed tree from " + path, () => {
+      const cues = parser.parse(vtt).cues.filter(c => !c.nonSerializable);
+      const revtt = seri.serialize(cues);
+      const {cues: recues, errors} = parser.parse(revtt);
+      assert.deepEqual(recues, cues);
+    });
   }
 });
+
+
