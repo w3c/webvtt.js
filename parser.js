@@ -73,7 +73,7 @@
           linePosition:"auto",
           textPosition:50,
           size:100,
-          alignment:"middle",
+          alignment:"center",
           text:"",
           tree:null
         }
@@ -363,7 +363,7 @@
           }
           cue.size = size
         } else if(setting == "align") { // alignment
-          var alignValues = ["start", "middle", "end", "left", "right"]
+          var alignValues = ["start", "center", "end", "left", "right"]
           if(alignValues.indexOf(value) == -1) {
             err("Alignment can only be set to one of " + alignValues.join(", ") + ".")
             continue
