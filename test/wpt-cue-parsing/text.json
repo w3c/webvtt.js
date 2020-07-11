@@ -1,0 +1,1 @@
+[{"text": "text\n", "expectedTree": "| \"text\"\n"}, {"text": "text1\ntext2\n", "expectedTree": "| \"text1\ntext2\"\n"}, {"text": "foo\u0000bar\n", "expectedTree": "| \"foo\ufffdbar\"\n"}, {"text": "\u2713\n", "expectedTree": "| \"\u2713\"\n"}, {"text": "text1\n\ntext2\n", "expectedTree": "| \"text1\"\n"}]
