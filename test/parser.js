@@ -2,6 +2,7 @@ const fs = require("fs");
 const { assert } = require('chai');
 const WebVTTParser = require("../parser.js").WebVTTParser;
 const WebVTTSerializer = require("../parser.js").WebVTTSerializer;
+const entities = require("../html-entities.json");
 
 // Adapting test_harness.js into chai asserts
 function assert_equals (a, b, c) {
@@ -134,7 +135,7 @@ function parseLineIntoCueTree(line, tree, indent = 0) {
 
 describe("Tests the cue parser", () => {
   before(() => {
-    parser = new WebVTTParser();
+    parser = new WebVTTParser(entities);
     seri = new WebVTTSerializer();
   });
   const dir = 'test/wpt-cue-parsing/';
