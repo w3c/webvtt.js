@@ -1,0 +1,38 @@
+WEBVTT
+
+00:00.000 --> 00:01.000
+test
+
+
+00:01.000 --> 00:02.000
+<ruby>test<rt>test
+
+
+00:02.000 --> 00:03.000
+<ruby>test<rt>test</rt>test
+
+
+00:03.000 --> 00:04.000
+<ruby>test<rt>test</rt></ruby>test
+
+
+00:04.000 --> 00:05.000
+<ruby>test<rt>test</ruby>test
+
+
+00:05.000 --> 00:06.000
+<ruby>test<rt><b>test</rt></ruby>test
+
+
+00:06.000 --> 00:07.000
+<ruby>test<rt><b>test</ruby>test
+
+
+00:07.000 --> 00:08.000
+<ruby>test<rt><b>test</rt></ruby></b>test
+
+
+00:08.000 --> 00:09.000
+<ruby>test<rt><b>test</rt></b></ruby>test
+
+
