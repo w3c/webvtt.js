@@ -621,7 +621,11 @@
             result += c
           }
         } else if(state == "escape") {
-          if(c == "&") {
+          if(c == "<" || c == undefined) {
+            err("Incorrect escape.")
+            result += buffer
+            return ["text", result]
+          } else if(c == "&") {
             err("Incorrect escape.")
             result += buffer
             buffer = c
@@ -645,10 +649,6 @@
               result += buffer + ";"
             }
             state = "data"
-          } else if(c == "<" || c == undefined) {
-            err("Incorrect escape.")
-            result += buffer
-            return ["text", result]
           } else {
             err("Incorrect escape.")
             result += buffer + c
