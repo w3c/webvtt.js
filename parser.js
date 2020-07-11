@@ -496,9 +496,24 @@
         }
 
     this.parse = function(cueStart, cueEnd) {
+      function removeCycles(tree) {
+        const cyclelessTree = {...tree};
+        if (tree.children) {
+          cyclelessTree.children = tree.children.map(removeCycles);
+        }
+        if (cyclelessTree.parent) {
+          delete cyclelessTree.parent;
+        }
+        return cyclelessTree;
+      }
+
       var result = {children:[]},
           current = result,
           timestamps = []
+
+      result.toJSON = function() {
+        return removeCycles({children:this.children});
+      }
 
       function attach(token) {
         current.children.push({type:"object", name:token[1], classes:token[2], children:[], parent:current})
