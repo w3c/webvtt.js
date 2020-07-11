@@ -24,6 +24,8 @@ const parser = new WebVTTParser();
 const tree = parser.parse(someVTT, 'metadata');
 ```
 
+By default, the WebVTT parser only recognizes a small subset of named character entities. If you want the full spec-compliant behavior, pass the content of [[html-entities.json]] to the `WebVTTParser()` constructor.
+
 To serialize a WebVTT tree to string:
 
 ```js

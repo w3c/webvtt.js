@@ -46,7 +46,7 @@ describe("Tests the file parser", () => {
       const cues = parser.parse(vtt).cues.filter(c => !c.nonSerializable);
       const revtt = seri.serialize(cues);
       const {cues: recues, errors} = parser.parse(revtt);
-      assert.deepEqual(JSON.parse(JSON.stringify(recues)), JSON.parse(JSON.stringify(cues)));
+      assert.deepEqual(recues, cues);
     });
   }
 });
@@ -146,7 +146,7 @@ describe("Tests the cue parser", () => {
       const expected = JSON.parse(fs.readFileSync(dir + path.replace(/\.vtt/, '.json'), 'utf-8'));
       const res = parser.parse(vtt);
       res.cues.forEach((cue, i) => {
-        assert.deepEqual(JSON.parse(JSON.stringify(cue.tree)), parseStringIntoCueTree(expected[i].expectedTree), "parsing cue " + expected[i].text.trim() + " gives the expected result");
+        assert.deepEqual(cue.tree, parseStringIntoCueTree(expected[i].expectedTree), "parsing cue " + expected[i].text.trim() + " gives the expected result");
       });
     });
   }

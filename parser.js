@@ -524,10 +524,6 @@
           current = result,
           timestamps = []
 
-      result.toJSON = function() {
-        return removeCycles({children:this.children});
-      }
-
       function attach(token) {
         current.children.push({type:"object", name:token[1], classes:token[2], children:[], parent:current})
         current = current.children[current.children.length-1]
@@ -612,7 +608,7 @@
         }
         current = current.parent
       }
-      return result
+      return removeCycles(result)
     }
 
     function nextToken() {
