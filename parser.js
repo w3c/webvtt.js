@@ -691,21 +691,29 @@
           }
         } else if(state == "start tag class") {
           if(c == "\t" || c == "\f" || c == " ") {
-            classes.push(buffer)
+            if (buffer) {
+              classes.push(buffer)
+            }
             buffer = ""
             state = "start tag annotation"
           } else if(c == "\n") {
-            classes.push(buffer)
+            if (buffer) {
+              classes.push(buffer)
+            }
             buffer = c
             state = "start tag annotation"
           } else if(c == ".") {
-            classes.push(buffer)
+            if (buffer) {
+              classes.push(buffer)
+            }
             buffer = ""
           } else if(c == ">" || c == undefined) {
             if(c == ">") {
               pos++
             }
-            classes.push(buffer)
+            if (buffer) {
+              classes.push(buffer)
+            }
             return ["start tag", result, classes, ""]
           } else {
             buffer += c
