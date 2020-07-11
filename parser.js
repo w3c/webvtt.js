@@ -15,7 +15,18 @@
     alignment:"center",
   };
 
-  var WebVTTParser = function() {
+  var WebVTTParser = function(entities) {
+    if (!entities) {
+      entities = {
+        "&amp": "&",
+        "&lt": "<",
+        "&gt": ">",
+        "&lrm": "\u200e",
+        "&rlm": "\u200f",
+        "&nbsp": "\u00A0"
+      }
+    }
+    this.entities = entities
     this.parse = function(input, mode) {
       // global search and replace for \0
       input = input.replace(/\0/g, '\uFFFD');
@@ -163,7 +174,7 @@
         }
 
         /* CUE TEXT PROCESSING */
-        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode)
+        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, this.entities)
         cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
         cues.push(cue)
       }
@@ -486,7 +497,9 @@
     }
   }
 
-  var WebVTTCueTextParser = function(line, errorHandler, mode) {
+  var WebVTTCueTextParser = function(line, errorHandler, mode, entities) {
+    this.entities = entities
+    var self = this
     var line = line,
         pos = 0,
         err = function(message) {
@@ -623,27 +636,32 @@
         } else if(state == "escape") {
           if(c == "<" || c == undefined) {
             err("Incorrect escape.")
-            result += buffer
+            let m;
+            if (m = buffer.match(/^&#([0-9]+)$/)) {
+              result += String.fromCharCode(m[1])
+            } else {
+              if(self.entities[buffer]) {
+                result += self.entities[buffer]
+              } else {
+                result += buffer
+              }
+            }
             return ["text", result]
           } else if(c == "&") {
             err("Incorrect escape.")
             result += buffer
             buffer = c
-          } else if(/[abglmnsprt]/.test(c)) {
+          } else if(/[a-z#0-9]/i.test(c)) {
             buffer += c
           } else if(c == ";") {
-            if(buffer == "&amp") {
-              result += "&"
-            } else if(buffer == "&lt") {
-              result += "<"
-            } else if(buffer == "&gt") {
-              result += ">"
-            } else if(buffer == "&lrm") {
-              result += "\u200e"
-            } else if(buffer == "&rlm") {
-              result += "\u200f"
-            } else if(buffer == "&nbsp") {
-              result += "\u00A0"
+            let m;
+            if (m = buffer.match(/^&#(x?[0-9]+)$/)) {
+              // we prepend "0" so that x20 be interpreted as hexadecim (0x20)
+              result += String.fromCharCode("0" + m[1])
+            } else if(self.entities[buffer + c]) {
+              result += self.entities[buffer + c]
+            } else if (m = Object.keys(entities).find(n => buffer.startsWith(n.replace(/;$/, '')))) { // partial match
+              result += self.entities[m] + buffer.slice(m.length) + c
             } else {
               err("Incorrect escape.")
               result += buffer + ";"
