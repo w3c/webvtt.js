@@ -656,7 +656,7 @@
               result += String.fromCharCode("0" + m[1])
             } else if(self.entities[buffer + c]) {
               result += self.entities[buffer + c]
-            } else if (m = Object.keys(entities).find(n => buffer.startsWith(n.replace(/;$/, '')))) { // partial match
+            } else if (m = Object.keys(entities).find(n => buffer.startsWith(n))) { // partial match
               result += self.entities[m] + buffer.slice(m.length) + c
             } else {
               err("Incorrect escape.")
