@@ -805,7 +805,7 @@
       for (var i = 0; i < tree.length; i++) {
         var node = tree[i]
         if(node.type == "text") {
-          result += node.value
+          result += node.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         } else if(node.type == "object") {
           result += "<" + node.name
           if(node.classes) {
