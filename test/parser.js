@@ -133,6 +133,21 @@ function parseLineIntoCueTree(line, tree, indent = 0) {
   }
 }
 
+function mergeAdjacentTextNodes(tree) {
+  if (tree.children) {
+    tree.children = tree.children.reduce((acc, b) => {
+      if (acc.length > 0 && b.type === "text" && acc[acc.length -1].type === "text") {
+        acc[acc.length - 1].value += b.value;
+      } else {
+        acc.push(b);
+      }
+      return acc;
+    }, []);
+    tree.children = tree.children.map(mergeAdjacentTextNodes);
+  }
+  return tree;
+}
+
 describe("Tests the cue parser", () => {
   before(() => {
     parser = new WebVTTParser(entities);
@@ -149,7 +164,23 @@ describe("Tests the cue parser", () => {
         assert.deepEqual(cue.tree, parseStringIntoCueTree(expected[i].expectedTree), "parsing cue " + expected[i].text.trim() + " gives the expected result");
       });
     });
+    it("can parse the serialized version of the parsed cue tree from " + path, () => {
+      const cues = parser.parse(vtt).cues.map(
+        // in re-parsing, adjancent text nodes get merged
+        // which we don't want to flag as a meaning full difference
+        c => Object.assign({}, c, {tree: mergeAdjacentTextNodes(c.tree)})
+      );
+      const revtt = seri.serialize(cues);
+      const {cues: recues, errors} = parser.parse(revtt);
+      // Given that the initial text is not canonicalized, we ignore it here
+      cues.forEach((cue, i) => {
+        if (i === 4)
+          console.log(JSON.stringify(cue.tree, null, 2), JSON.stringify(recues[i].tree, null, 2), path)
+        assert.deepEqual(cue.tree, recues[i].tree, "serializing cue " + cue.text + " (#" + i + ") gives the expected result");
+      });
+    });
   }
+
 });
 
 
