@@ -820,6 +820,8 @@
           if(node.children)
             result += serializeTree(node.children)
           result += "</" + node.name + ">"
+        } else if(node.type == "timestamp") {
+          result += "<" + serializeTimestamp(node.value) + ">"
         } else {
           result += "<" + node.value + ">"
         }
