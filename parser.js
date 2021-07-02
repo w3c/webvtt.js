@@ -35,6 +35,7 @@
           linePos = 0,
           lines = input.split(NEWLINE),
           alreadyCollected = false,
+          styles = [],
           cues = [],
           errors = []
       function err(message, col) {
@@ -121,6 +122,29 @@
             continue
           }
 
+          /* STYLES */
+          if(/^STYLE($|[ \t])/.test(cue.id)) {
+            var style = []
+            var invalid = false
+            linePos++
+            while(lines[linePos] != "" && lines[linePos] != undefined) {
+              if(lines[linePos].indexOf("-->") != -1) {
+                err("Cannot have timestamp in a style block.")
+                invalid = true
+              }
+              style.push(lines[linePos])
+              linePos++
+            }
+            if(cues.length) {
+              err("Style blocks cannot appear after the first cue.")
+              continue
+            }
+            if (!invalid) {
+              styles.push(style.join('\n'))
+            }
+            continue
+          }
+
           linePos++
 
           if(lines[linePos] == "" || lines[linePos] == undefined) {
@@ -190,7 +214,7 @@
         return 0
       })
       /* END */
-      return {cues:cues, errors:errors, time:Date.now()-startTime}
+      return {cues:cues, errors:errors, time:Date.now()-startTime, styles: styles}
     }
   }
 
@@ -836,8 +860,16 @@
         + serializeCueSettings(cue)
         + "\n" + serializeTree(cue.tree.children) + "\n\n"
     }
-    this.serialize = function(cues) {
+    function serializeStyle(style) {
+      return "STYLE\n" + style + "\n\n"
+    }
+    this.serialize = function(cues, styles) {
       var result = "WEBVTT\n\n"
+      if (styles) {
+        for(var i=0;i<styles.length;i++) {
+          result += serializeStyle(styles[i])
+        }
+      }
       for(var i=0;i<cues.length;i++) {
         result += serializeCue(cues[i])
       }
