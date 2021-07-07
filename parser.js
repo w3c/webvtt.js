@@ -771,7 +771,7 @@
 
   var WebVTTSerializer = function() {
     function serializeTimestamp(seconds) {
-      const ms = ("" + (seconds - Math.floor(seconds)).toFixed(3)*1000).padEnd(3, "0");
+      const ms = ("00" + (seconds - Math.floor(seconds)).toFixed(3)*1000).slice(-3);
       let h = 0, m = 0, s = 0;
       if (seconds >= 3600) {
         h = Math.floor(seconds/3600);
