@@ -198,7 +198,7 @@
         }
 
         /* CUE TEXT PROCESSING */
-        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, this.entities)
+        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, entities)
         cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
         cues.push(cue)
       }
