@@ -853,7 +853,7 @@
       return result
     }
     function serializeCue(cue) {
-      return (cue.id ? cue.id + "\n" : "")
+      return (cue.id !== undefined ? cue.id + "\n" : "")
         + serializeTimestamp(cue.startTime)
         + " --> "
         + serializeTimestamp(cue.endTime)
