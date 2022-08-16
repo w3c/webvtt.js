@@ -26,6 +26,8 @@ describe("Tests the file parser", () => {
   const dir = 'test/wpt-file-parsing/';
   const files = fs.readdirSync(dir);
   for(let path of files.filter(p => p.match(/\.vtt$/)))  {
+    // No Support for region syntax yet
+    if (path.match(/region/)) continue;
     const vtt = fs.readFileSync(dir + path, 'utf-8');
     it("matches the expected assertions for " + path, () => {
       const js = fs.readFileSync(dir + path.replace(/\.vtt$/, '.js'), 'utf-8');
