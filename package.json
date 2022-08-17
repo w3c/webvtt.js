@@ -1,6 +1,6 @@
 {
   "name": "webvtt-parser",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "WebVTT parser and validator",
   "main": "parser.js",
   "files": ["parser.js", "html-entities.json"],
