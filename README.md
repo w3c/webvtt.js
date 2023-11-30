@@ -1,6 +1,12 @@
 WebVTT parser and validator
 ===========================
-
+## Whats changed from original:
+1) package.json:
+   added "type": "module"
+2) parser.js:
+   Instead of "exportify(object)" used "return { WebVTTParser, WebVTTCueTimingsAndSettingsParser, WebVTTCueTextParser, WebVTTSerializer }" which exported in ESM syntax
+3) You can use it the same as original repo.
+   
 Relevant links:
 
 * [Live WebVTT Validator](http://quuz.org/webvtt/).
