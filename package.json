@@ -1,5 +1,6 @@
 {
   "name": "webvtt-parser",
+  "type": "module",
   "version": "2.2.0",
   "description": "WebVTT parser and validator",
   "main": "parser.js",
