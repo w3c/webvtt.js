@@ -14,18 +14,15 @@ Relevant links:
 
 ## Install
 
-You can load the `parser.js` file into your HTML page and the API will become available on
-`window`. Alternatively you can install it using bower (`webvtt`) or npm (`npm install webvtt-parser`).
+Place parser.js to your project
+Then import in ESM
 
 ## API
-
-This module exports classes to either through `window` or `require()`/`import`; the ones you are
-likely to need are `WebVTTParser` and `WebVTTSerializer`.
 
 To parse a WebVTT string:
 
 ```js
-import { WebVTTParser } from 'webvtt-parser';
+import { WebVTTParser } from '<path-webvtt-parser>/parser.js';
 const parser = new WebVTTParser();
 const tree = parser.parse(someVTT, 'metadata');
 ```
@@ -35,7 +32,7 @@ By default, the WebVTT parser only recognizes a small subset of named character 
 To serialize a WebVTT tree to string:
 
 ```js
-import { WebVTTSerializer } from 'webvtt-parser';
+import { WebVTTSerializer } from '<path-webvtt-parser>/parser.js';
 const seri = new WebVTTSerializer();
 const tree = seri.serialize(vttTree.cues)
 ```
