@@ -1,5 +1,4 @@
 // Edited by Bohdan Vovkotrub
-// for use in ESM
 
 // Any copyright is dedicated to the Public Domain.
 // http://creativecommons.org/publicdomain/zero/1.0/
@@ -795,18 +794,28 @@ function WebVTT() {
       }
     }
   }
-
+	function serializeTimestamp(seconds) {
+		const ms = ("00" + (seconds - Math.floor(seconds)).toFixed(3)*1000).slice(-3);
+		let h = 0, m = 0, s = 0;
+		if (seconds >= 3600) {
+			h = Math.floor(seconds/3600);
+		}
+		m = Math.floor((seconds - 3600*h) / 60);
+		s = Math.floor(seconds - 3600*h - 60*m);
+		//return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
+		return ("" + h).padStart(2, "0") + ":" + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
+	}
   var WebVTTSerializer = function() {
-    function serializeTimestamp(seconds) {
-      const ms = ("00" + (seconds - Math.floor(seconds)).toFixed(3)*1000).slice(-3);
-      let h = 0, m = 0, s = 0;
-      if (seconds >= 3600) {
-        h = Math.floor(seconds/3600);
-      }
-      m = Math.floor((seconds - 3600*h) / 60);
-      s = Math.floor(seconds - 3600*h - 60*m);
-      return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
-    }
+    // function serializeTimestamp(seconds) {
+    //   const ms = ("00" + (seconds - Math.floor(seconds)).toFixed(3)*1000).slice(-3);
+    //   let h = 0, m = 0, s = 0;
+    //   if (seconds >= 3600) {
+    //     h = Math.floor(seconds/3600);
+    //   }
+    //   m = Math.floor((seconds - 3600*h) / 60);
+    //   s = Math.floor(seconds - 3600*h - 60*m);
+    //   return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
+    // }
     function serializeCueSettings(cue) {
       var result = ""
       const nonDefaultSettings = Object.keys(defaultCueSettings).filter(s => cue[s] !== defaultCueSettings[s]);
@@ -892,7 +901,8 @@ function WebVTT() {
     WebVTTParser,
     WebVTTCueTimingsAndSettingsParser,
     WebVTTCueTextParser,
-    WebVTTSerializer
+    WebVTTSerializer,
+		serializeTimestamp,
   };
 };
 
@@ -901,6 +911,7 @@ const {
   WebVTTCueTimingsAndSettingsParser,
   WebVTTCueTextParser,
   WebVTTSerializer,
+	serializeTimestamp,
 } = WebVTT();
 
 export {
@@ -908,4 +919,5 @@ export {
   WebVTTCueTimingsAndSettingsParser,
   WebVTTCueTextParser,
   WebVTTSerializer,
+	serializeTimestamp,
 };
