@@ -92,6 +92,7 @@ function WebVTT() {
           id:"",
           startTime:0,
           endTime:0,
+					timeLine:"00:00:00.000 --> 00:00:00.000", // Added by Bohdan Vovkotrub
           pauseOnExit:false,
           direction:"horizontal",
           snapToLines:true,
@@ -164,13 +165,13 @@ function WebVTT() {
         /* TIMINGS */
         alreadyCollected = false
         var timings = new WebVTTCueTimingsAndSettingsParser(lines[linePos], err)
+				
         var previousCueStart = 0
         if(cues.length > 0) {
           previousCueStart = cues[cues.length-1].startTime
         }
         if(parseTimings && !timings.parse(cue, previousCueStart)) {
           /* BAD CUE */
-
           cue = null
           linePos++
 
@@ -184,6 +185,7 @@ function WebVTT() {
           }
           continue
         }
+				cue.timeLine = lines[linePos]; // added by Bohdan Vovkotrub
         linePos++
 
         /* CUE TEXT LOOP */
@@ -202,6 +204,7 @@ function WebVTT() {
         /* CUE TEXT PROCESSING */
         var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, entities)
         cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
+
         cues.push(cue)
       }
       cues.sort(function(a, b) {
@@ -216,6 +219,7 @@ function WebVTT() {
         return 0
       })
       /* END */
+			
       return {cues:cues, errors:errors, time:Date.now()-startTime, styles: styles}
     }
   }
@@ -794,28 +798,19 @@ function WebVTT() {
       }
     }
   }
-	function serializeTimestamp(seconds) {
-		const ms = ("00" + (seconds - Math.floor(seconds)).toFixed(3)*1000).slice(-3);
-		let h = 0, m = 0, s = 0;
-		if (seconds >= 3600) {
-			h = Math.floor(seconds/3600);
-		}
-		m = Math.floor((seconds - 3600*h) / 60);
-		s = Math.floor(seconds - 3600*h - 60*m);
-		//return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
-		return ("" + h).padStart(2, "0") + ":" + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
-	}
+	
   var WebVTTSerializer = function() {
-    // function serializeTimestamp(seconds) {
-    //   const ms = ("00" + (seconds - Math.floor(seconds)).toFixed(3)*1000).slice(-3);
-    //   let h = 0, m = 0, s = 0;
-    //   if (seconds >= 3600) {
-    //     h = Math.floor(seconds/3600);
-    //   }
-    //   m = Math.floor((seconds - 3600*h) / 60);
-    //   s = Math.floor(seconds - 3600*h - 60*m);
-    //   return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
-    // }
+    function serializeTimestamp(seconds) {
+			const ms = ("00" + (seconds - Math.floor(seconds)).toFixed(3)*1000).slice(-3);
+			let h = 0, m = 0, s = 0;
+			if (seconds >= 3600) {
+				h = Math.floor(seconds/3600);
+			}
+			m = Math.floor((seconds - 3600*h) / 60);
+			s = Math.floor(seconds - 3600*h - 60*m);
+			//return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
+			return ("" + h).padStart(2, "0") + ":" + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
+		}
     function serializeCueSettings(cue) {
       var result = ""
       const nonDefaultSettings = Object.keys(defaultCueSettings).filter(s => cue[s] !== defaultCueSettings[s]);
@@ -902,7 +897,6 @@ function WebVTT() {
     WebVTTCueTimingsAndSettingsParser,
     WebVTTCueTextParser,
     WebVTTSerializer,
-		serializeTimestamp,
   };
 };
 
@@ -910,8 +904,7 @@ const {
   WebVTTParser,
   WebVTTCueTimingsAndSettingsParser,
   WebVTTCueTextParser,
-  WebVTTSerializer,
-	serializeTimestamp,
+  WebVTTSerializer
 } = WebVTT();
 
 export {
@@ -919,5 +912,4 @@ export {
   WebVTTCueTimingsAndSettingsParser,
   WebVTTCueTextParser,
   WebVTTSerializer,
-	serializeTimestamp,
 };
