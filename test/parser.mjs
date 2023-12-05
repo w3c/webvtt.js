@@ -1,8 +1,9 @@
-const fs = require("fs");
-const { assert } = require('chai');
-const WebVTTParser = require("../parser.js").WebVTTParser;
-const WebVTTSerializer = require("../parser.js").WebVTTSerializer;
-const entities = require("../html-entities.json");
+import fs from 'fs';
+import path from 'path';
+import { assert } from 'chai';
+import { WebVTTParser, WebVTTSerializer } from '../parser.mjs';
+const entities = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'html-entities.json'), 'utf-8'));
+
 
 // Adapting test_harness.js into chai asserts
 function assert_equals (a, b, c) {
@@ -182,7 +183,4 @@ describe("Tests the cue parser", () => {
       });
     });
   }
-
 });
-
-
