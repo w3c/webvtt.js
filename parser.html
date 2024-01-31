@@ -2,14 +2,27 @@
 <meta charset=utf-8>
 <title>Live WebVTT Validator</title>
 <style>
- body { font:80% Helvetica Neue, sans-serif }
- h1 { font-size:1.2em }
- textarea { width:100%; height:30em }
- .copyright { font-size:.8em; color:grey }
+  body {
+    font: 80% Helvetica Neue, sans-serif
+  }
+
+  h1 {
+    font-size: 1.2em
+  }
+
+  textarea {
+    width: 100%;
+    height: 30em
+  }
+
+  .copyright {
+    font-size: .8em;
+    color: grey
+  }
 </style>
 <h1>Live <a href="http://dev.w3.org/html5/webvtt/">WebVTT</a> Validator</h1>
-<script src=parser.js></script>
-<p><textarea oninput=test()>WEBVTT
+<!-- <script module src=parser.js></script> -->
+<p><textarea id="my-textarea">WEBVTT
 
 00:11.000 --> 00:13.000 vertical:rl
 <v Roger Bingham>We are in New York City
@@ -27,30 +40,37 @@
 <v Roger Bingham>Astrophysicist, Director of the Hayden Planetarium
 
 </textarea>
-<p>Kind: <select id=kind onchange=test()><option>subtitles/captions/descriptions<option>metadata<option>chapters</select>
+<p>Kind: <select id=kind onchange=test()>
+    <option>subtitles/captions/descriptions
+    <option>metadata
+    <option>chapters
+  </select>
 <p id=status>You need JavaScript for this service.
 <ol></ol>
 <pre hidden></pre>
-<script>
+<script type="module">
+  import { WebVTTParser, WebVTTSerializer } from './parser.mjs';
+  const myTextarea = document.querySelector('#my-textarea');
+  myTextarea.addEventListener('input', test);
   function test() {
     var pa = new WebVTTParser(),
-        r = pa.parse(document.getElementsByTagName("textarea")[0].value, document.getElementById("kind").value)
+      r = pa.parse(document.getElementsByTagName("textarea")[0].value, document.getElementById("kind").value)
     var ol = document.getElementsByTagName("ol")[0],
-        p = document.getElementById("status"),
-        pre = document.getElementsByTagName("pre")[0]
+      p = document.getElementById("status"),
+      pre = document.getElementsByTagName("pre")[0]
     ol.textContent = ""
-    if(r.errors.length > 0) {
-      if(r.errors.length == 1)
+    if (r.errors.length > 0) {
+      if (r.errors.length == 1)
         p.textContent = "Almost there!"
-      else if(r.errors.length < 5)
+      else if (r.errors.length < 5)
         p.textContent = "Not bad, keep at it!"
       else
         p.textContent = "You are hopeless, RTFS."
-      for(var i = 0; i < r.errors.length; i++) {
+      for (var i = 0; i < r.errors.length; i++) {
         var error = r.errors[i],
-            message = "Line " + error.line,
-            li = document.createElement("li")
-        if(error.col)
+          message = "Line " + error.line,
+          li = document.createElement("li")
+        if (error.col)
           message += ", column " + error.col
         li.textContent = message + ": " + error.message
         ol.appendChild(li)
@@ -67,7 +87,8 @@
     var hmm = url.slice(url.indexOf("#")) == "#debug"
     document.getElementsByTagName("pre")[0].hidden = hmm ? false : true
   }
-  onhashchange = function(e) { debug(e.newURL) }
+  onhashchange = function (e) { debug(e.newURL) }
   debug(location.href)
 </script>
-<p class=copyright><a href="https://github.com/annevk/webvtt">Source code</a> available under <a href="http://creativecommons.org/publicdomain/zero/1.0/">CC0</a>.
+<p class=copyright><a href="https://github.com/annevk/webvtt">Source code</a> available under <a
+    href="http://creativecommons.org/publicdomain/zero/1.0/">CC0</a>.
