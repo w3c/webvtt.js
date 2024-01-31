@@ -60,7 +60,7 @@ class RegEx {
   };
 };
 
-class Cue {
+export class Cue {
   constructor() {
     const defaults = Cue.getDefaultCueSettings();
 
@@ -99,7 +99,7 @@ class Cue {
 };
 
 export class WebVTTParser {
-  constructor(entities) {
+  constructor(sortByTime = true, entities) {
     if (!entities) {
       entities = {
         "&amp": "&",
@@ -111,6 +111,7 @@ export class WebVTTParser {
       };
     };
     this.entities = entities;
+    this.sortByTime = sortByTime;
   };
 
 
@@ -267,13 +268,17 @@ export class WebVTTParser {
       cue.tree = cueTextParser.parse(cue.startTime, cue.endTime);
       cues.push(cue);
     };
-    cues.sort((a, b) => {
-      if (a.startTime < b.startTime) return -1;
-      if (a.startTime > b.startTime) return 1;
-      if (a.endTime > b.endTime) return -1;
-      if (a.endTime < b.endTime) return 1;
-      return 0;
-    });
+
+    if (this.sortByTime === true) {
+      cues.sort((a, b) => {
+        if (a.startTime < b.startTime) return -1;
+        if (a.startTime > b.startTime) return 1;
+        if (a.endTime > b.endTime) return -1;
+        if (a.endTime < b.endTime) return 1;
+        return 0;
+      });
+    };
+    
     /* END */
 
     return {
