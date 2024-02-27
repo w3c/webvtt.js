@@ -17,7 +17,7 @@ function assert_false (a, b) {
   return assert.isFalse(a, b);
 }
 
-let parser ,seri;
+let parser, seri;
 describe("Tests the file parser", () => {
   before(() => {
     parser = new WebVTTParser();
@@ -185,4 +185,115 @@ describe("Tests the cue parser", () => {
 
 });
 
+describe("Tests the default cue parser with well-formed and lenient versions of the default entities", () => {
+  before(() => {
+    parser = new WebVTTParser();
+  });
 
+  const suffixes = ['', '--'];
+
+  const map = {
+    '&lt;': '<',
+    '&gt;': '>',
+    '&amp;': '&',
+    '&lt': '<',
+    '&gt': '>',
+    '&amp': '&',
+  };
+
+  for (const suffix of suffixes) {
+    for (const [raw, char] of Object.entries(map)) {
+      it(`Parsed ${JSON.stringify(raw)} gives ${JSON.stringify(char)} when followed by suffix ${JSON.stringify(suffix)}`, () => {
+        assert.deepEqual(unescape(raw, suffix), char);
+      });
+    }
+  }
+
+  function unescape(raw, suffix) {
+    const { value } = parser.parse(
+      `WEBVTT\n\n00:00.000 --> 00:01.000\n${raw}${suffix}\n`,
+      'metadata',
+    ).cues[0].tree.children[0];
+
+    return value.slice(0, value.length - suffix.length);
+  }
+});
+
+describe("Tests round-tripping parse->serialize->parse of well-formed entities", () => {
+  before(() => {
+    parser = new WebVTTParser();
+    seri = new WebVTTSerializer();
+  });
+
+  for (const raw of ['&lt;', '&gt;', '&amp;']) {
+    it(`Raw entity ${JSON.stringify(raw)} round-trips to itself`, () => {
+      const parsed = parser.parse(`WEBVTT\n\n00:00.000 --> 00:01.000\n${raw}\n`, 'metadata');
+      const serialized = seri.serialize(parsed.cues);
+
+      assert.include(serialized, raw);
+    });
+  }
+});
+
+describe("Tests round-tripping serialize->parse->serialize of well-formed entities", () => {
+  before(() => {
+    parser = new WebVTTParser();
+    seri = new WebVTTSerializer();
+  });
+
+  for (const char of ['<', '>', '&']) {
+    it(`Char ${JSON.stringify(char)} round-trips to itself`, () => {
+      const textNode = { type: 'text', value: char };
+
+      const serialized = seri.serialize([
+        {
+          direction: 'horizontal',
+          snapToLines: true,
+          linePosition: 'auto',
+          lineAlign: 'start',
+          textPosition: 'auto',
+          positionAlign: 'auto',
+          size: 100,
+          alignment: 'center',
+          id: '',
+          startTime: 0,
+          endTime: 1,
+          pauseOnExit: false,
+          text: '[dummy text]',
+          tree: {
+            children: [textNode],
+          },
+        },
+      ]);
+      const parsed = parser.parse(serialized, 'metadata');
+      const roundTripped = parsed.cues[0].tree.children[0];
+
+      assert.deepEqual(roundTripped, textNode);
+    });
+  }
+});
+
+describe("https://github.com/w3c/webvtt.js/issues/36", () => {
+  before(() => {
+    parser = new WebVTTParser({
+      "&amp": "&",
+      "&amp;": "&",
+      "&AMP;": "&",
+      "&AMP": "&",
+    });
+  });
+
+  const texts = [
+    { raw: 'Texas A&amp;M', expect: 'Texas A&M' },
+    { raw: 'Texas A&amp', expect: 'Texas A&' },
+    { raw: 'Texas A&ampM', expect: 'Texas A&M' },
+  ];
+
+  for (const { raw, expect } of texts) {
+    it(raw, () => {
+      const text = `WEBVTT\n\n1\n00:11:46.140 --> 00:11:48.380\n${raw}`;
+      const parsed = parser.parse(text, "metadata");
+      assert.deepEqual(parsed.cues[0].tree.children[0].value, expect);
+    });
+  }
+});

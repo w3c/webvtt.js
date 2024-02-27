@@ -18,6 +18,14 @@
   var WebVTTParser = function(entities) {
     if (!entities) {
       entities = {
+        // well-formed versions
+        "&amp;": "&",
+        "&lt;": "<",
+        "&gt;": ">",
+        "&lrm;": "\u200e",
+        "&rlm;": "\u200f",
+        "&nbsp;": "\u00A0",
+        // lenient versions without trailing semicolon
         "&amp": "&",
         "&lt": "<",
         "&gt": ">",
@@ -27,6 +35,7 @@
       }
     }
     this.entities = entities
+    var entityRegex = makeEntityRegex(entities)
     this.parse = function(input, mode) {
       // global search and replace for \0
       input = input.replace(/\0/g, '\uFFFD');
@@ -198,7 +207,7 @@
         }
 
         /* CUE TEXT PROCESSING */
-        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, entities)
+        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, entities, entityRegex)
         cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
         cues.push(cue)
       }
@@ -523,6 +532,7 @@
 
   var WebVTTCueTextParser = function(line, errorHandler, mode, entities) {
     this.entities = entities
+    var entityRegex = arguments[4] == null ? makeEntityRegex(entities) : arguments[4]
     var self = this
     var line = line,
         pos = 0,
@@ -644,8 +654,14 @@
         var c = line[pos]
         if(state == "data") {
           if(c == "&") {
-            buffer = c
-            state = "escape"
+            var match = line.slice(pos).match(entityRegex)
+            if (match) {
+              result += self.entities[match[0]]
+              pos += match[0].length - 1
+            } else {
+              buffer = c
+              state = 'escape'
+            }
           } else if(c == "<" && result == "") {
             state = "tag"
           } else if(c == "<" || c == undefined) {
@@ -660,11 +676,7 @@
             if (m = buffer.match(/^&#([0-9]+)$/)) {
               result += String.fromCharCode(m[1])
             } else {
-              if(self.entities[buffer]) {
-                result += self.entities[buffer]
-              } else {
-                result += buffer
-              }
+              result += buffer
             }
             return ["text", result]
           } else if(c == "&") {
@@ -678,10 +690,6 @@
             if (m = buffer.match(/^&#(x?[0-9]+)$/)) {
               // we prepend "0" so that x20 be interpreted as hexadecim (0x20)
               result += String.fromCharCode("0" + m[1])
-            } else if(self.entities[buffer + c]) {
-              result += self.entities[buffer + c]
-            } else if (m = Object.keys(entities).find(n => buffer.startsWith(n))) { // partial match
-              result += self.entities[m] + buffer.slice(m.length) + c
             } else {
               err("Incorrect escape.")
               result += buffer + ";"
@@ -875,6 +883,12 @@
       }
       return result
     }
+  }
+
+  function makeEntityRegex(entities) {
+    return new RegExp('^(?:' + Object.keys(entities).sort(function (a, b) {
+      return b.length - a.length
+    }).join('|') + ')')
   }
 
   function exportify(object) {
