@@ -35,6 +35,7 @@
       }
     }
     this.entities = entities
+    var entityRegex = makeEntityRegex(entities)
     this.parse = function(input, mode) {
       // global search and replace for \0
       input = input.replace(/\0/g, '\uFFFD');
@@ -206,7 +207,7 @@
         }
 
         /* CUE TEXT PROCESSING */
-        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, entities)
+        var cuetextparser = new WebVTTCueTextParser(cue.text, err, mode, entities, entityRegex)
         cue.tree = cuetextparser.parse(cue.startTime, cue.endTime)
         cues.push(cue)
       }
@@ -529,9 +530,9 @@
     }
   }
 
-  var WebVTTCueTextParser = function(line, errorHandler, mode, entities) {
+  var WebVTTCueTextParser = function(line, errorHandler, mode, entities, entityRegex) {
     this.entities = entities
-    this.entityRegex = new RegExp(Object.keys(entities).sort((a, b) => b.length - a.length).join('|'))
+    if (entityRegex == null) entityRegex = makeEntityRegex(entities)
     var self = this
     var line = line,
         pos = 0,
@@ -653,7 +654,7 @@
         var c = line[pos]
         if(state == "data") {
           if(c == "&") {
-            var match = line.slice(pos).match(self.entityRegex)
+            var match = line.slice(pos).match(entityRegex)
             if (match) {
               result += self.entities[match[0]]
               pos += match[0].length - 1
@@ -882,6 +883,10 @@
       }
       return result
     }
+  }
+
+  function makeEntityRegex(entities) {
+    return new RegExp(Object.keys(entities).sort((a, b) => b.length - a.length).join('|'))
   }
 
   function exportify(object) {
