@@ -530,9 +530,9 @@
     }
   }
 
-  var WebVTTCueTextParser = function(line, errorHandler, mode, entities, entityRegex) {
+  var WebVTTCueTextParser = function(line, errorHandler, mode, entities) {
     this.entities = entities
-    if (entityRegex == null) entityRegex = makeEntityRegex(entities)
+    var entityRegex = arguments[4] == null ? makeEntityRegex(entities) : arguments[4]
     var self = this
     var line = line,
         pos = 0,
@@ -886,7 +886,9 @@
   }
 
   function makeEntityRegex(entities) {
-    return new RegExp(Object.keys(entities).sort((a, b) => b.length - a.length).join('|'))
+    return new RegExp('^(?:' + Object.keys(entities).sort(function (a, b) {
+      return b.length - a.length
+    }).join('|') + ')')
   }
 
   function exportify(object) {
