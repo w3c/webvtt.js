@@ -802,7 +802,7 @@
       }
       m = Math.floor((seconds - 3600*h) / 60);
       s = Math.floor(seconds - 3600*h - 60*m);
-      return (h ? h + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
+      return (h ? ("" + h).padStart(2, "0") + ":" : "") + ("" + m).padStart(2, "0") + ":" + ("" + s).padStart(2, "0") + "." + ms;
     }
     function serializeCueSettings(cue) {
       var result = ""
